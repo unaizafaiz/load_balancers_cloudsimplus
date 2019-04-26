@@ -9,7 +9,8 @@ scalaVersion := "2.12.8"
 libraryDependencies ++= Seq(
   "org.cloudsimplus" % "cloudsim-plus" % "4.3.1",
   "junit" % "junit" % "4.12" % Test,
-  "org.slf4j" % "slf4j-api" % "1.7.12"
+  "org.slf4j" % "slf4j-api" % "1.7.12",
+  "com.typesafe" % "config" % "1.3.2"
 )
 
 assemblyMergeStrategy in assembly := {
