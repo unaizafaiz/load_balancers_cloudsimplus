@@ -1,38 +1,12 @@
-/*
- * CloudSim Plus: A modern, highly-extensible and easier-to-use Framework for
- * Modeling and Simulation of Cloud Computing Infrastructures and Services.
- * http://cloudsimplus.org
- *
- *     Copyright (C) 2015-2018 Universidade da Beira Interior (UBI, Portugal) and
- *     the Instituto Federal de Educação Ciência e Tecnologia do Tocantins (IFTO, Brazil).
- *
- *     This file is part of CloudSim Plus.
- *
- *     CloudSim Plus is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     CloudSim Plus is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with CloudSim Plus. If not, see <http://www.gnu.org/licenses/>.
- */
-package org.cloudsimplus.examples.autoscaling
+
+package com.cloudsimplus.app
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple
-import org.cloudbus.cloudsim.brokers.DatacenterBroker
 import org.cloudbus.cloudsim.brokers.DatacenterBrokerSimple
 import org.cloudbus.cloudsim.cloudlets.Cloudlet
 import org.cloudbus.cloudsim.cloudlets.CloudletSimple
 import org.cloudbus.cloudsim.core.CloudSim
-import org.cloudbus.cloudsim.core.Simulation
-import org.cloudbus.cloudsim.datacenters.Datacenter
 import org.cloudbus.cloudsim.datacenters.DatacenterSimple
-import org.cloudbus.cloudsim.distributions.ContinuousDistribution
 import org.cloudbus.cloudsim.distributions.UniformDistr
 import org.cloudbus.cloudsim.hosts.Host
 import org.cloudbus.cloudsim.hosts.HostSimple
@@ -42,19 +16,15 @@ import org.cloudbus.cloudsim.resources.Pe
 import org.cloudbus.cloudsim.resources.PeSimple
 import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
-import org.cloudbus.cloudsim.utilizationmodels.UtilizationModel
 import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.Vm
 import org.cloudbus.cloudsim.vms.VmSimple
-import org.cloudsimplus.autoscaling.HorizontalVmScaling
 import org.cloudsimplus.autoscaling.HorizontalVmScalingSimple
 import org.cloudsimplus.builders.tables.CloudletsTableBuilder
 import org.cloudsimplus.listeners.EventInfo
-import org.cloudsimplus.listeners.EventListener
 import java.util
-import java.util.{ArrayList, Comparator, List}
-import java.util.function.{Function, Predicate, Supplier}
 import java.util.Comparator.comparingDouble
+
 
 
 /**
@@ -134,7 +104,7 @@ object LoadBalancerByHorizontalVmScaling {
 
   private def createCloudletList(): Unit = {
     val range = 0 until LoadBalancerByHorizontalVmScaling.CLOUDLETS
-    for(i<-range){
+    range.foreach{_=>
       cloudletList.add(createCloudlet)
     }
   }
@@ -154,13 +124,13 @@ object LoadBalancerByHorizontalVmScaling {
       printf("\t#Creating %d Cloudlets at time %d.\n", numberOfCloudlets, time)
       val newCloudlets = new util.ArrayList[Cloudlet](numberOfCloudlets)
       val range = 0 until numberOfCloudlets
-      for(i<- range){
+      range.foreach{_ => {
         val cloudlet = createCloudlet
         cloudletList.add(cloudlet)
         newCloudlets.add(cloudlet)
       }
-      broker0.submitCloudletList(newCloudlets)
-    }
+        broker0.submitCloudletList(newCloudlets)
+    }}
   }
 
   /**
@@ -168,7 +138,7 @@ object LoadBalancerByHorizontalVmScaling {
     */
   private def createDatacenter(): Unit = {
     val range = 0 until LoadBalancerByHorizontalVmScaling.HOSTS
-    for(i <- range){
+    range.foreach{ _ =>
       hostList.add(createHost)
     }
     val dc0 = new DatacenterSimple(simulation, hostList, new VmAllocationPolicySimple)
@@ -178,7 +148,7 @@ object LoadBalancerByHorizontalVmScaling {
   private def createHost = {
     val peList = new util.ArrayList[Pe](LoadBalancerByHorizontalVmScaling.HOST_PES)
     val range = 0 until LoadBalancerByHorizontalVmScaling.HOST_PES
-    for(i<- range){
+    range.foreach{ _ =>
       peList.add(new PeSimple(1000, new PeProvisionerSimple))
     }
     val ram = 2048 // in Megabytes
@@ -198,7 +168,7 @@ object LoadBalancerByHorizontalVmScaling {
   private def createListOfScalableVms(numberOfVms: Int) = {
     val newList = new util.ArrayList[Vm](numberOfVms)
     val range = 0 until numberOfVms
-    for(i<- range){
+    range.foreach{ i =>
       val vm = createVm
       createHorizontalVmScaling(vm)
       newList.add(vm)
