@@ -1,4 +1,3 @@
-
 name := "unaiza_faiz_project"
 
 version := "0.1"
