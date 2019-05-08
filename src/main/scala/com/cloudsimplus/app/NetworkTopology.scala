@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.examples.network.applications
+package com.cloudsimplus.app
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple
 import org.cloudbus.cloudsim.brokers.DatacenterBroker
@@ -20,11 +20,10 @@ import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.network.NetworkVm
 import org.cloudsimplus.builders.tables.CloudletsTableBuilder
 import java.util
-import java.util.{ArrayList, List}
+import java.util.ArrayList
 
-import org.cloudbus.cloudsim.examples.network.applications.NetworkVmExampleAbstract.getSwitchIndex
-
-import scala.collection.mutable.ArrayBuffer
+import org.cloudbus.cloudsim.distributions.UniformDistr
+import org.cloudsimplus.listeners.EventInfo
 
 
 /**
@@ -35,7 +34,7 @@ import scala.collection.mutable.ArrayBuffer
   * @author Manoel Campos da Silva Filho
   */
 object NetworkTopology {
-  private val NUMBER_OF_HOSTS = 2
+  private val NUMBER_OF_HOSTS = 20
   private val HOST_MIPS = 1000
   private val HOST_PES = 4
   private val HOST_RAM = 2048 // host memory (Megabyte)
@@ -78,12 +77,18 @@ class NetworkTopology private() {
   * Creates, starts, stops the simulation and shows results.
   */
   println("Starting " + getClass.getSimpleName)
+  var cloudletlistsize =0
   val simulation: CloudSim = new CloudSim
+  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
+  simulation.addOnClockTickListener(createRandomCloudlets)
+  private var random = new UniformDistr()
   val datacenter: NetworkDatacenter = createDatacenter
   val broker: DatacenterBroker = new DatacenterBrokerSimple(simulation)
   val vmList = createAndSubmitVMs(broker)
   val cloudletList = createNetworkCloudlets
   broker.submitCloudletList(cloudletList)
+  simulation.addOnClockTickListener(createRandomCloudlets)
   simulation.start
   showSimulationResults()
 
@@ -148,7 +153,7 @@ class NetworkTopology private() {
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
 
-    val numberOfEdgeSwitches = 1
+    val numberOfEdgeSwitches = NetworkTopology.NUMBER_OF_HOSTS-1
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
 
     (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
@@ -163,6 +168,8 @@ class NetworkTopology private() {
       edgeSwitches(switchNum).connectHost(host)
     }
   }
+
+  def getSwitchIndex(host: NetworkHost, switchPorts: Int): Long = host.getId % Integer.MAX_VALUE.round / switchPorts
 
   /**
     * Creates a list of virtual machines in a Datacenter for a given broker and
@@ -203,9 +210,10 @@ class NetworkTopology private() {
   private def createNetworkCloudlets = {
     val numberOfCloudlets = 2
     val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets)
-    var i = 0
+    //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
+    var i = cloudletlistsize
     while ( {
-      i < numberOfCloudlets
+      i < cloudletlistsize+numberOfCloudlets
     }) {
       networkCloudletList.add(createNetworkCloudlet(vmList.get(i)))
 
@@ -213,6 +221,7 @@ class NetworkTopology private() {
         i += 1; i - 1
       }
     }
+    cloudletlistsize = cloudletlistsize + numberOfCloudlets
     //NetworkCloudlet 0 Tasks
     NetworkTopology.addExecutionTask(networkCloudletList.get(0))
     addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
@@ -221,6 +230,7 @@ class NetworkTopology private() {
     NetworkTopology.addExecutionTask(networkCloudletList.get(1))
     networkCloudletList
   }
+
 
   /**
     * Creates a {@link NetworkCloudlet}.
@@ -269,5 +279,20 @@ class NetworkTopology private() {
     task.setMemory(NetworkTopology.TASK_RAM)
     task.setExpectedPacketsToReceive(NetworkTopology.NUMBER_OF_PACKETS_TO_SEND)
     cloudlet.addTask(task)
+  }
+
+  /**
+    * Simulates the dynamic arrival of Cloudlets, randomly during simulation runtime.
+    * At any time the simulation clock updates, a new Cloudlet will be
+    * created with a probability of 30%.
+    *
+    * @param evt
+    */
+  private def createRandomCloudlets(evt: EventInfo): Unit = {
+    if (random.sample() <= 0.3 && cloudletlistsize<NetworkTopology.NUMBER_OF_HOSTS) {
+      printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
+
+      broker.submitCloudletList(createNetworkCloudlets)
+    }
   }
 }
