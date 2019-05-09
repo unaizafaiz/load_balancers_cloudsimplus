@@ -18,10 +18,12 @@ import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
 import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.network.NetworkVm
-import org.cloudsimplus.builders.tables.CloudletsTableBuilder
+import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBuilderWithCost}
 import java.util
 import java.util.{ArrayList, List}
 
+import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.examples.network.applications.NetworkVmExampleAbstract.getSwitchIndex
 
 import scala.collection.mutable.ArrayBuffer
@@ -32,10 +34,16 @@ import scala.collection.mutable.ArrayBuffer
   * It show how 2 {@link NetworkCloudlet}'s communicate,
   * each one running inside VMs on different hosts.
   *
-  * @author Manoel Campos da Silva Filho
+  * @author Tanveer Shaikh
   */
 object NetworkTopology {
-  private val NUMBER_OF_HOSTS = 2
+
+  val logger : Logger = LoggerFactory.getLogger(NetworkTopology.getClass)
+
+  val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
+  logger.info("Configuration files loaded")
+
+  private val NUMBER_OF_HOSTS = defaultConfig.getInt("hosts.number")
   private val HOST_MIPS = 1000
   private val HOST_PES = 4
   private val HOST_RAM = 2048 // host memory (Megabyte)
@@ -87,12 +95,16 @@ class NetworkTopology private() {
   simulation.start
   showSimulationResults()
 
+  cloudletList.forEach(c =>
+    println(c.getAccumulatedBwCost)
+  )
+
   private def showSimulationResults(): Unit = {
     val newList = broker.getCloudletFinishedList
-    new CloudletsTableBuilder(newList).build()
+    new CloudletsTableBuilderWithCost(newList).build()
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
-      println(s"\nHost %d data transferred: %d bytes", host.getId, host.getTotalDataTransferBytes)
+      println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
     }
     println(this.getClass.getSimpleName + " finished!")
   }
@@ -117,6 +129,8 @@ class NetworkTopology private() {
     }
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
     newDatacenter.setSchedulingInterval(5)
+    newDatacenter.getCharacteristics.setCostPerBw(112.50)
+    newDatacenter.getCharacteristics.setCostPerSecond(13)
     createNetwork(newDatacenter)
     newDatacenter
   }
@@ -129,7 +143,7 @@ class NetworkTopology private() {
   private def createPEs(numberOfPEs: Int, mips: Long) = {
     val peList = new util.ArrayList[Pe]
     var i = 0
-    while ( {
+    while ({
       i < numberOfPEs
     }) {
       peList.add(new PeSimple(mips, new PeProvisionerSimple))
@@ -232,6 +246,8 @@ class NetworkTopology private() {
     val netCloudlet = new NetworkCloudlet(4000, NetworkTopology.HOST_PES)
     netCloudlet.setMemory(NetworkTopology.TASK_RAM).setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
+    netCloudlet.setFileSize(1000)
+    netCloudlet.setOutputSize(15)
     netCloudlet
   }
 
