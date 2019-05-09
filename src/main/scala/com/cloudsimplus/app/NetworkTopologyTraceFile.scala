@@ -16,16 +16,15 @@ import org.cloudbus.cloudsim.resources.Pe
 import org.cloudbus.cloudsim.resources.PeSimple
 import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
-import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
+import org.cloudbus.cloudsim.utilizationmodels.{UtilizationModelDynamic, UtilizationModelFull}
 import org.cloudbus.cloudsim.vms.network.NetworkVm
-import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBuilderWithCost}
+import org.cloudsimplus.builders.tables.CloudletsTableBuilder
 import java.util
 import java.util.ArrayList
 
-import org.slf4j.{Logger, LoggerFactory}
-import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
 import org.cloudsimplus.listeners.EventInfo
+import java.util.stream.IntStream
 
 
 /**
@@ -33,16 +32,11 @@ import org.cloudsimplus.listeners.EventInfo
   * It show how 2 {@link NetworkCloudlet}'s communicate,
   * each one running inside VMs on different hosts.
   *
-  * @author Tanveer Shaikh
+  * @author Manoel Campos da Silva Filho
   */
-object NetworkTopology {
 
-  val logger : Logger = LoggerFactory.getLogger(NetworkTopology.getClass)
-
-  val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
-  logger.info("Configuration files loaded")
-
-  private val NUMBER_OF_HOSTS = defaultConfig.getInt("hosts.number")
+object NetworkTopologyTraceFile {
+  private val NUMBER_OF_HOSTS = 20
   private val HOST_MIPS = 1000
   private val HOST_PES = 4
   private val HOST_RAM = 2048 // host memory (Megabyte)
@@ -57,13 +51,16 @@ object NetworkTopology {
   private val NUMBER_OF_PACKETS_TO_SEND = 1
   private val TASK_RAM = 100
 
+  private val TRACE_FILE = "75-130-96-12_static_oxfr_ma_charter_com_irisaple_wup"
+  private val SCHEDULING_INTERVAL = 5
+
   /**
     * Starts the execution of the example.
     *
     * @param args command line arguments
     */
   def main(args: Array[String]): Unit = {
-    new NetworkTopology
+    new NetworkTopologyTraceFile
   }
 
   /**
@@ -77,17 +74,19 @@ object NetworkTopology {
     task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
   }
+
 }
 
-class NetworkTopology private() {
 
-/**
-  * Creates, starts, stops the simulation and shows results.
-  */
+class NetworkTopologyTraceFile private() {
+
+  /**
+    * Creates, starts, stops the simulation and shows results.
+    */
   println("Starting " + getClass.getSimpleName)
   var cloudletlistsize =0
   val simulation: CloudSim = new CloudSim
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  private val TIME_TO_TERMINATE_SIMULATION: Double = 100
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
   simulation.addOnClockTickListener(createRandomCloudlets)
   private var random = new UniformDistr()
@@ -100,16 +99,12 @@ class NetworkTopology private() {
   simulation.start
   showSimulationResults()
 
-  cloudletList.forEach(c =>
-    println(c.getAccumulatedBwCost)
-  )
-
   private def showSimulationResults(): Unit = {
     val newList = broker.getCloudletFinishedList
-    new CloudletsTableBuilderWithCost(newList).build()
+    new CloudletsTableBuilder(newList).build()
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
-      println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
+      println(s"\nHost %d data transferred: %d bytes", host.getId, host.getTotalDataTransferBytes)
     }
     println(this.getClass.getSimpleName + " finished!")
   }
@@ -123,7 +118,7 @@ class NetworkTopology private() {
     val hostList = new util.ArrayList[Host]
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_HOSTS
+      i < NetworkTopologyTraceFile.NUMBER_OF_HOSTS
     }) {
       val host = createHost
       hostList.add(host)
@@ -134,21 +129,19 @@ class NetworkTopology private() {
     }
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
     newDatacenter.setSchedulingInterval(5)
-    newDatacenter.getCharacteristics.setCostPerBw(112.50)
-    newDatacenter.getCharacteristics.setCostPerSecond(13)
     createNetwork(newDatacenter)
     newDatacenter
   }
 
   private def createHost = {
-    val peList = createPEs(NetworkTopology.HOST_PES, NetworkTopology.HOST_MIPS)
-    new NetworkHost(NetworkTopology.HOST_RAM, NetworkTopology.HOST_BW, NetworkTopology.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
+    val peList = createPEs(NetworkTopologyTraceFile.HOST_PES, NetworkTopologyTraceFile.HOST_MIPS)
+    new NetworkHost(NetworkTopologyTraceFile.HOST_RAM, NetworkTopologyTraceFile.HOST_BW, NetworkTopologyTraceFile.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
   }
 
   private def createPEs(numberOfPEs: Int, mips: Long) = {
     val peList = new util.ArrayList[Pe]
     var i = 0
-    while ({
+    while ( {
       i < numberOfPEs
     }) {
       peList.add(new PeSimple(mips, new PeProvisionerSimple))
@@ -167,7 +160,7 @@ class NetworkTopology private() {
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
 
-    val numberOfEdgeSwitches = NetworkTopology.NUMBER_OF_HOSTS-1
+    val numberOfEdgeSwitches = NetworkTopologyTraceFile.NUMBER_OF_HOSTS-1
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
 
     (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
@@ -196,7 +189,7 @@ class NetworkTopology private() {
     val list = new util.ArrayList[NetworkVm]
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_HOSTS
+      i < NetworkTopologyTraceFile.NUMBER_OF_HOSTS
     }) {
       val vm = createVm(i)
       list.add(vm)
@@ -210,8 +203,8 @@ class NetworkTopology private() {
   }
 
   private def createVm(id: Int) = {
-    val vm = new NetworkVm(id, NetworkTopology.HOST_MIPS, NetworkTopology.HOST_PES)
-    vm.setRam(NetworkTopology.HOST_RAM).setBw(NetworkTopology.HOST_BW).setSize(NetworkTopology.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
+    val vm = new NetworkVm(id, NetworkTopologyTraceFile.HOST_MIPS, NetworkTopologyTraceFile.HOST_PES)
+    vm.setRam(NetworkTopologyTraceFile.HOST_RAM).setBw(NetworkTopologyTraceFile.HOST_BW).setSize(NetworkTopologyTraceFile.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
     vm
   }
 
@@ -237,11 +230,11 @@ class NetworkTopology private() {
     }
     cloudletlistsize = cloudletlistsize + numberOfCloudlets
     //NetworkCloudlet 0 Tasks
-    NetworkTopology.addExecutionTask(networkCloudletList.get(0))
+    NetworkTopologyTraceFile.addExecutionTask(networkCloudletList.get(0))
     addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
     //NetworkCloudlet 1 Tasks
     addReceiveTask(networkCloudletList.get(1), networkCloudletList.get(0))
-    NetworkTopology.addExecutionTask(networkCloudletList.get(1))
+    NetworkTopologyTraceFile.addExecutionTask(networkCloudletList.get(1))
     networkCloudletList
   }
 
@@ -253,11 +246,20 @@ class NetworkTopology private() {
     * @return
     */
   private def createNetworkCloudlet(vm: NetworkVm) = {
-    val netCloudlet = new NetworkCloudlet(4000, NetworkTopology.HOST_PES)
-    netCloudlet.setMemory(NetworkTopology.TASK_RAM).setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+    val netCloudlet = new NetworkCloudlet(4000, NetworkTopologyTraceFile.HOST_PES)
+    import org.cloudbus.cloudsim.utilizationmodels.UtilizationModel
+    import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelPlanetLab
+    val utilizationCpu = UtilizationModelPlanetLab.getInstance(NetworkTopologyTraceFile.TRACE_FILE, NetworkTopologyTraceFile.SCHEDULING_INTERVAL)
+
+    //netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+
+
+    netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModelCpu(utilizationCpu)
+      .setUtilizationModelBw(new UtilizationModelDynamic(0.2))
+      .setUtilizationModelRam(new UtilizationModelDynamic(0.4))
+
+
     netCloudlet.setVm(vm)
-    netCloudlet.setFileSize(1000)
-    netCloudlet.setOutputSize(15)
     netCloudlet
   }
 
@@ -269,13 +271,13 @@ class NetworkTopology private() {
     */
   private def addSendTask(sourceCloudlet: NetworkCloudlet, destinationCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletSendTask(sourceCloudlet.getTasks.size)
-    task.setMemory(NetworkTopology.TASK_RAM)
+    task.setMemory(NetworkTopologyTraceFile.TASK_RAM)
     sourceCloudlet.addTask(task)
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_PACKETS_TO_SEND
+      i < NetworkTopologyTraceFile.NUMBER_OF_PACKETS_TO_SEND
     }) {
-      task.addPacket(destinationCloudlet, NetworkTopology.PACKET_DATA_LENGTH_IN_BYTES)
+      task.addPacket(destinationCloudlet, NetworkTopologyTraceFile.PACKET_DATA_LENGTH_IN_BYTES)
 
       {
         i += 1; i - 1
@@ -292,8 +294,8 @@ class NetworkTopology private() {
     */
   private def addReceiveTask(cloudlet: NetworkCloudlet, sourceCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletReceiveTask(cloudlet.getTasks.size, sourceCloudlet.getVm)
-    task.setMemory(NetworkTopology.TASK_RAM)
-    task.setExpectedPacketsToReceive(NetworkTopology.NUMBER_OF_PACKETS_TO_SEND)
+    task.setMemory(NetworkTopologyTraceFile.TASK_RAM)
+    task.setExpectedPacketsToReceive(NetworkTopologyTraceFile.NUMBER_OF_PACKETS_TO_SEND)
     cloudlet.addTask(task)
   }
 
@@ -305,7 +307,7 @@ class NetworkTopology private() {
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
-    if (random.sample() <= 0.3 && cloudletlistsize<NetworkTopology.NUMBER_OF_HOSTS) {
+    if (random.sample() <= 0.3 && cloudletlistsize<NetworkTopologyTraceFile.NUMBER_OF_HOSTS) {
       printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
 
       broker.submitCloudletList(createNetworkCloudlets)
