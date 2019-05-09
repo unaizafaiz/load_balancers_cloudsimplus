@@ -51,11 +51,14 @@ object NetworkTopology {
 
   private val HOST_BW = 10000
   private val CLOUDLET_EXECUTION_TASK_LENGTH = 4000
-  private val CLOUDLET_FILE_SIZE = 300
-  private val CLOUDLET_OUTPUT_SIZE = 300
+  private val CLOUDLET_FILE_SIZE = defaultConfig.getLong("cloudlet.file_size")
+  private val CLOUDLET_OUTPUT_SIZE = defaultConfig.getLong("cloudlet.op_size")
   private val PACKET_DATA_LENGTH_IN_BYTES = 1000
   private val NUMBER_OF_PACKETS_TO_SEND = 1
   private val TASK_RAM = 100
+
+  private val COST_PER_BW = defaultConfig.getDouble("datacenter.cost_per_bw")
+  private val COST_PER_SECOND = defaultConfig.getDouble("datacenter.cost_per_sec")
 
   /**
     * Starts the execution of the example.
@@ -85,7 +88,7 @@ class NetworkTopology private() {
   * Creates, starts, stops the simulation and shows results.
   */
   println("Starting " + getClass.getSimpleName)
-  var cloudletlistsize =0
+  var cloudletlistsize = 0
   val simulation: CloudSim = new CloudSim
   private val TIME_TO_TERMINATE_SIMULATION: Double = 30
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
@@ -100,9 +103,14 @@ class NetworkTopology private() {
   simulation.start
   showSimulationResults()
 
-  cloudletList.forEach(c =>
-    println(c.getAccumulatedBwCost)
-  )
+  private def showTotalCost(): Unit = {
+    var totalCost = 0.0D
+    val newList = broker.getCloudletFinishedList
+    cloudletList.forEach(c =>
+      totalCost = totalCost + c.getTotalCost
+    )
+    println("Total cost of execution of " + newList.size + " Cloudlets = $" + Math.round(totalCost * 100D)/100D)
+  }
 
   private def showSimulationResults(): Unit = {
     val newList = broker.getCloudletFinishedList
@@ -111,6 +119,9 @@ class NetworkTopology private() {
     for (host <- datacenter.getHostList[NetworkHost]) {
       println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
     }
+
+    showTotalCost()
+
     println(this.getClass.getSimpleName + " finished!")
   }
 
@@ -134,8 +145,8 @@ class NetworkTopology private() {
     }
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
     newDatacenter.setSchedulingInterval(5)
-    newDatacenter.getCharacteristics.setCostPerBw(112.50)
-    newDatacenter.getCharacteristics.setCostPerSecond(13)
+    newDatacenter.getCharacteristics.setCostPerBw(NetworkTopology.COST_PER_BW)
+    newDatacenter.getCharacteristics.setCostPerSecond(NetworkTopology.COST_PER_SECOND)
     createNetwork(newDatacenter)
     newDatacenter
   }
@@ -227,7 +238,7 @@ class NetworkTopology private() {
     //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
     var i = cloudletlistsize
     while ( {
-      i < cloudletlistsize+numberOfCloudlets
+      i < cloudletlistsize + numberOfCloudlets
     }) {
       networkCloudletList.add(createNetworkCloudlet(vmList.get(i)))
 
@@ -256,8 +267,8 @@ class NetworkTopology private() {
     val netCloudlet = new NetworkCloudlet(4000, NetworkTopology.HOST_PES)
     netCloudlet.setMemory(NetworkTopology.TASK_RAM).setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
-    netCloudlet.setFileSize(1000)
-    netCloudlet.setOutputSize(15)
+    netCloudlet.setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE)
+    netCloudlet.setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE)
     netCloudlet
   }
 

@@ -36,9 +36,9 @@ import org.cloudsimplus.listeners.EventInfo
   * @author Manoel Campos da Silva Filho
   */
 object HorizontalVmScaling {
-  private val NUMBER_OF_HOSTS = 1
+  private val NUMBER_OF_HOSTS = 50
   private val HOST_MIPS = 1000
-  private val HOST_PES = 4
+  private val HOST_PES = 2
   private val HOST_RAM = 2048 // host memory (Megabyte)
 
   private val HOST_STORAGE = 1000000 // host storage
@@ -51,8 +51,8 @@ object HorizontalVmScaling {
   private val NUMBER_OF_PACKETS_TO_SEND = 1
   private val TASK_RAM = 1000
 
-  private val VMS = 1
-  private val CLOUDLETS = 2
+  private val VMS = 4
+  private val CLOUDLETS = 1
 
   private val SCHEDULING_INTERVAL = 5
   private val CLOUDLETS_CREATION_INTERVAL = SCHEDULING_INTERVAL * 2
@@ -94,12 +94,12 @@ class HorizontalVmScaling private() {
 
   var cloudletlistsize =0
   var createVms = 0
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  private val TIME_TO_TERMINATE_SIMULATION: Double = 1000
 
 
   val simulation: CloudSim = new CloudSim
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
-  //simulation.addOnClockTickListener(createNetworkCloudlets)
+  simulation.addOnClockTickListener(createNetworkCloudlets)
   private var random = new UniformDistr()
   val datacenter: NetworkDatacenter = createDatacenter
   val broker: DatacenterBroker = new DatacenterBrokerSimple(simulation)

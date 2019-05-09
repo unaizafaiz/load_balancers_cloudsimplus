@@ -14,7 +14,7 @@ public class CloudletsTableBuilderWithCost extends CloudletsTableBuilder {
     private static final String SECONDS = "Seconds";
     private static final String CPU_CORES = "CPU cores";
     private static final String DOLLARS = "Dollars";
-    private static final String COST_FORMAT = "%.00f";
+    private static final String COST_FORMAT = "%.2f";
 
     public CloudletsTableBuilderWithCost(List<? extends Cloudlet> list) {
         super(list);
