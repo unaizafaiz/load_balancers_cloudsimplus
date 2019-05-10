@@ -28,14 +28,10 @@ import java.util.stream.IntStream
 
 
 /**
-  * A simple example simulating a distributed application.
-  * It show how 2 {@link NetworkCloudlet}'s communicate,
-  * each one running inside VMs on different hosts.
-  *
-  * @author Manoel Campos da Silva Filho
+  *Load Balancing with round robin using PlanetLab Utilization model with trace files
   */
 
-object NetworkTopologyTraceFile {
+object RoundRobinLBTraceFile {
   private val NUMBER_OF_HOSTS = 20
   private val HOST_MIPS = 1000
   private val HOST_PES = 4
@@ -60,7 +56,7 @@ object NetworkTopologyTraceFile {
     * @param args command line arguments
     */
   def main(args: Array[String]): Unit = {
-    new NetworkTopologyTraceFile
+    new RoundRobinLBTraceFile
   }
 
   /**
@@ -78,7 +74,7 @@ object NetworkTopologyTraceFile {
 }
 
 
-class NetworkTopologyTraceFile private() {
+class RoundRobinLBTraceFile private() {
 
   /**
     * Creates, starts, stops the simulation and shows results.
@@ -118,7 +114,7 @@ class NetworkTopologyTraceFile private() {
     val hostList = new util.ArrayList[Host]
     var i = 0
     while ( {
-      i < NetworkTopologyTraceFile.NUMBER_OF_HOSTS
+      i < RoundRobinLBTraceFile.NUMBER_OF_HOSTS
     }) {
       val host = createHost
       hostList.add(host)
@@ -134,8 +130,8 @@ class NetworkTopologyTraceFile private() {
   }
 
   private def createHost = {
-    val peList = createPEs(NetworkTopologyTraceFile.HOST_PES, NetworkTopologyTraceFile.HOST_MIPS)
-    new NetworkHost(NetworkTopologyTraceFile.HOST_RAM, NetworkTopologyTraceFile.HOST_BW, NetworkTopologyTraceFile.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
+    val peList = createPEs(RoundRobinLBTraceFile.HOST_PES, RoundRobinLBTraceFile.HOST_MIPS)
+    new NetworkHost(RoundRobinLBTraceFile.HOST_RAM, RoundRobinLBTraceFile.HOST_BW, RoundRobinLBTraceFile.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
   }
 
   private def createPEs(numberOfPEs: Int, mips: Long) = {
@@ -160,7 +156,7 @@ class NetworkTopologyTraceFile private() {
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
 
-    val numberOfEdgeSwitches = NetworkTopologyTraceFile.NUMBER_OF_HOSTS-1
+    val numberOfEdgeSwitches = RoundRobinLBTraceFile.NUMBER_OF_HOSTS-1
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
 
     (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
@@ -189,7 +185,7 @@ class NetworkTopologyTraceFile private() {
     val list = new util.ArrayList[NetworkVm]
     var i = 0
     while ( {
-      i < NetworkTopologyTraceFile.NUMBER_OF_HOSTS
+      i < RoundRobinLBTraceFile.NUMBER_OF_HOSTS
     }) {
       val vm = createVm(i)
       list.add(vm)
@@ -203,8 +199,8 @@ class NetworkTopologyTraceFile private() {
   }
 
   private def createVm(id: Int) = {
-    val vm = new NetworkVm(id, NetworkTopologyTraceFile.HOST_MIPS, NetworkTopologyTraceFile.HOST_PES)
-    vm.setRam(NetworkTopologyTraceFile.HOST_RAM).setBw(NetworkTopologyTraceFile.HOST_BW).setSize(NetworkTopologyTraceFile.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
+    val vm = new NetworkVm(id, RoundRobinLBTraceFile.HOST_MIPS, RoundRobinLBTraceFile.HOST_PES)
+    vm.setRam(RoundRobinLBTraceFile.HOST_RAM).setBw(RoundRobinLBTraceFile.HOST_BW).setSize(RoundRobinLBTraceFile.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
     vm
   }
 
@@ -230,11 +226,11 @@ class NetworkTopologyTraceFile private() {
     }
     cloudletlistsize = cloudletlistsize + numberOfCloudlets
     //NetworkCloudlet 0 Tasks
-    NetworkTopologyTraceFile.addExecutionTask(networkCloudletList.get(0))
+    RoundRobinLBTraceFile.addExecutionTask(networkCloudletList.get(0))
     addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
     //NetworkCloudlet 1 Tasks
     addReceiveTask(networkCloudletList.get(1), networkCloudletList.get(0))
-    NetworkTopologyTraceFile.addExecutionTask(networkCloudletList.get(1))
+    RoundRobinLBTraceFile.addExecutionTask(networkCloudletList.get(1))
     networkCloudletList
   }
 
@@ -246,15 +242,15 @@ class NetworkTopologyTraceFile private() {
     * @return
     */
   private def createNetworkCloudlet(vm: NetworkVm) = {
-    val netCloudlet = new NetworkCloudlet(4000, NetworkTopologyTraceFile.HOST_PES)
+    val netCloudlet = new NetworkCloudlet(4000, RoundRobinLBTraceFile.HOST_PES)
     import org.cloudbus.cloudsim.utilizationmodels.UtilizationModel
     import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelPlanetLab
-    val utilizationCpu = UtilizationModelPlanetLab.getInstance(NetworkTopologyTraceFile.TRACE_FILE, NetworkTopologyTraceFile.SCHEDULING_INTERVAL)
+    val utilizationCpu = UtilizationModelPlanetLab.getInstance(RoundRobinLBTraceFile.TRACE_FILE, RoundRobinLBTraceFile.SCHEDULING_INTERVAL)
 
     //netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
 
 
-    netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModelCpu(utilizationCpu)
+    netCloudlet.setMemory(RoundRobinLBTraceFile.TASK_RAM).setFileSize(RoundRobinLBTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(RoundRobinLBTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModelCpu(utilizationCpu)
       .setUtilizationModelBw(new UtilizationModelDynamic(0.2))
       .setUtilizationModelRam(new UtilizationModelDynamic(0.4))
 
@@ -271,13 +267,13 @@ class NetworkTopologyTraceFile private() {
     */
   private def addSendTask(sourceCloudlet: NetworkCloudlet, destinationCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletSendTask(sourceCloudlet.getTasks.size)
-    task.setMemory(NetworkTopologyTraceFile.TASK_RAM)
+    task.setMemory(RoundRobinLBTraceFile.TASK_RAM)
     sourceCloudlet.addTask(task)
     var i = 0
     while ( {
-      i < NetworkTopologyTraceFile.NUMBER_OF_PACKETS_TO_SEND
+      i < RoundRobinLBTraceFile.NUMBER_OF_PACKETS_TO_SEND
     }) {
-      task.addPacket(destinationCloudlet, NetworkTopologyTraceFile.PACKET_DATA_LENGTH_IN_BYTES)
+      task.addPacket(destinationCloudlet, RoundRobinLBTraceFile.PACKET_DATA_LENGTH_IN_BYTES)
 
       {
         i += 1; i - 1
@@ -294,8 +290,8 @@ class NetworkTopologyTraceFile private() {
     */
   private def addReceiveTask(cloudlet: NetworkCloudlet, sourceCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletReceiveTask(cloudlet.getTasks.size, sourceCloudlet.getVm)
-    task.setMemory(NetworkTopologyTraceFile.TASK_RAM)
-    task.setExpectedPacketsToReceive(NetworkTopologyTraceFile.NUMBER_OF_PACKETS_TO_SEND)
+    task.setMemory(RoundRobinLBTraceFile.TASK_RAM)
+    task.setExpectedPacketsToReceive(RoundRobinLBTraceFile.NUMBER_OF_PACKETS_TO_SEND)
     cloudlet.addTask(task)
   }
 
@@ -307,7 +303,7 @@ class NetworkTopologyTraceFile private() {
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
-    if (random.sample() <= 0.3 && cloudletlistsize<NetworkTopologyTraceFile.NUMBER_OF_HOSTS) {
+    if (random.sample() <= 0.3 && cloudletlistsize<RoundRobinLBTraceFile.NUMBER_OF_HOSTS) {
       printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
 
       broker.submitCloudletList(createNetworkCloudlets)

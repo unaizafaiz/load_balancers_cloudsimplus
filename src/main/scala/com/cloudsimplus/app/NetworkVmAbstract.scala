@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.examples.network.applications
+package com.cloudsimplus.app
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple
 import org.cloudbus.cloudsim.brokers.DatacenterBroker
@@ -28,16 +28,7 @@ import scala.collection.mutable.ArrayBuffer
 
 
 /**
-  * A base class for network simulation examples
-  * using objects such as{@link NetworkDatacenter},
-  * {@link NetworkHost}, {@link NetworkVm} and {@link NetworkCloudlet}.
-  *
-  * The class simulate applications that are compounded by a list of
-  * {@link NetworkCloudlet}.
-  *
-  * @author Saurabh Kumar Garg
-  * @author Rajkumar Buyya
-  * @author Manoel Campos da Silva Filho
+  * Baseclass of network simulation
   */
 object NetworkVmExampleAbstract {
   val MAX_VMS_PER_HOST = 2
@@ -105,7 +96,55 @@ object NetworkVmExampleAbstract {
   def getSwitchIndex(host: NetworkHost, switchPorts: Int): Long = host.getId % Integer.MAX_VALUE.round / switchPorts
 }
 
-abstract class NetworkVmExampleAbstract private[applications]() {
+abstract class NetworkVmExampleAbstract {
+
+  val MAX_VMS_PER_HOST = 2
+  val COST = 3.0 // the cost of using processing in this resource
+
+  val COST_PER_MEM = 0.05 // the cost of using memory in this resource
+
+  val COST_PER_STORAGE = 0.001 // the cost of using storage in this resource
+
+  val COST_PER_BW = 0.0 // the cost of using bw in this resource
+
+  val HOST_MIPS = 1000
+  val HOST_PES = 8
+  val HOST_RAM = 2048 // MEGA
+
+  val HOST_STORAGE = 1000000
+  val HOST_BW = 10000
+  val VM_MIPS = 1000
+  val VM_SIZE = 10000 // image size (Megabyte)
+
+  val VM_RAM = 512
+  val VM_BW = 1000
+  val VM_PES_NUMBER: Int = HOST_PES / MAX_VMS_PER_HOST
+  /**
+    * Number of fictitious applications to create.
+    * Each application is just a list of {@link NetworkCloudlet}.
+    *
+    * @see #appMap
+    */
+  val NUMBER_OF_APPS = 1
+  val NETCLOUDLET_PES_NUMBER: Int = VM_PES_NUMBER
+  val NETCLOUDLET_EXECUTION_TASK_LENGTH = 4000
+  val NETCLOUDLET_FILE_SIZE = 300
+  val NETCLOUDLET_OUTPUT_SIZE = 300
+  val NETCLOUDLET_RAM = 100
+  private val PACKET_DATA_LENGTH_IN_BYTES = 1000
+  private val NUMBER_OF_PACKETS_TO_SEND = 100
+  private val SCHEDULING_INTERVAL = 5
+
+  /**
+    * Adds an execution task to the list of tasks of the given {@link NetworkCloudlet}.
+    *
+    * @param cloudlet the { @link NetworkCloudlet} the task will belong to
+    */
+  protected def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
+    val task = new CloudletExecutionTask(cloudlet.getTasks.size, NETCLOUDLET_EXECUTION_TASK_LENGTH)
+    task.setMemory(NETCLOUDLET_RAM)
+    cloudlet.addTask(task)
+  }
 
 /**
   * Creates, starts, stops the simulation and shows results.
@@ -119,6 +158,7 @@ abstract class NetworkVmExampleAbstract private[applications]() {
   val datacenter: NetworkDatacenter = createDatacenter
   val brokerList = createBrokerForEachApp
   val vmList = new ArrayList[NetworkVm]
+  val cloudletList = new ArrayList[NetworkCloudlet]
   val appMap = new HashMap[Integer, List[NetworkCloudlet]]
   var appId: Int = -1
 
@@ -227,7 +267,7 @@ abstract class NetworkVmExampleAbstract private[applications]() {
     peList
   }
 
-  /**
+ /* /**
     * Creates internal Datacenter network.
     *
     * @param datacenter Datacenter where the network will be created
@@ -237,6 +277,29 @@ abstract class NetworkVmExampleAbstract private[applications]() {
 
     edgeSwitches.foreach((edgeSwitch) => {
       edgeSwitches.add(new EdgeSwitch(simulation, datacenter))
+      datacenter.addSwitch(edgeSwitch)
+    })
+
+    import scala.collection.JavaConversions._
+    for (host <- datacenter.getHostList[NetworkHost]) {
+      val switchNum: Int = getSwitchIndex(host, edgeSwitches(0).getPorts).toInt
+      edgeSwitches(switchNum).connectHost(host)
+    }
+  }*/
+
+  /**
+    * Creates internal Datacenter network.
+    *
+    * @param datacenter Datacenter where the network will be created
+    */
+  protected def createNetwork(datacenter: NetworkDatacenter): Unit = {
+
+    val numberOfEdgeSwitches = 1
+    val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
+
+    (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
+      val edgeSwitch = new EdgeSwitch(simulation, datacenter)
+      edgeSwitches.add(edgeSwitch)
       datacenter.addSwitch(edgeSwitch)
     })
 

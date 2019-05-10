@@ -29,15 +29,11 @@ import org.cloudsimplus.listeners.EventInfo
 
 
 /**
-  * A simple example simulating a distributed application.
-  * It show how 2 {@link NetworkCloudlet}'s communicate,
-  * each one running inside VMs on different hosts.
-  *
-  * @author Tanveer Shaikh
+  * Load balancing by round robin order of VM assignment
   */
-object NetworkTopology {
+object RoundRobinLoadBalancer {
 
-  val logger : Logger = LoggerFactory.getLogger(NetworkTopology.getClass)
+  val logger : Logger = LoggerFactory.getLogger(RoundRobinLoadBalancer.getClass)
 
   val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
   logger.info("Configuration files loaded")
@@ -66,7 +62,7 @@ object NetworkTopology {
     * @param args command line arguments
     */
   def main(args: Array[String]): Unit = {
-    new NetworkTopology
+    new RoundRobinLoadBalancer
   }
 
   /**
@@ -82,7 +78,7 @@ object NetworkTopology {
   }
 }
 
-class NetworkTopology private() {
+class RoundRobinLoadBalancer private() {
 
 /**
   * Creates, starts, stops the simulation and shows results.
@@ -134,7 +130,7 @@ class NetworkTopology private() {
     val hostList = new util.ArrayList[Host]
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_HOSTS
+      i < RoundRobinLoadBalancer.NUMBER_OF_HOSTS
     }) {
       val host = createHost
       hostList.add(host)
@@ -145,15 +141,15 @@ class NetworkTopology private() {
     }
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
     newDatacenter.setSchedulingInterval(5)
-    newDatacenter.getCharacteristics.setCostPerBw(NetworkTopology.COST_PER_BW)
-    newDatacenter.getCharacteristics.setCostPerSecond(NetworkTopology.COST_PER_SECOND)
+    newDatacenter.getCharacteristics.setCostPerBw(RoundRobinLoadBalancer.COST_PER_BW)
+    newDatacenter.getCharacteristics.setCostPerSecond(RoundRobinLoadBalancer.COST_PER_SECOND)
     createNetwork(newDatacenter)
     newDatacenter
   }
 
   private def createHost = {
-    val peList = createPEs(NetworkTopology.HOST_PES, NetworkTopology.HOST_MIPS)
-    new NetworkHost(NetworkTopology.HOST_RAM, NetworkTopology.HOST_BW, NetworkTopology.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
+    val peList = createPEs(RoundRobinLoadBalancer.HOST_PES, RoundRobinLoadBalancer.HOST_MIPS)
+    new NetworkHost(RoundRobinLoadBalancer.HOST_RAM, RoundRobinLoadBalancer.HOST_BW, RoundRobinLoadBalancer.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
   }
 
   private def createPEs(numberOfPEs: Int, mips: Long) = {
@@ -178,7 +174,7 @@ class NetworkTopology private() {
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
 
-    val numberOfEdgeSwitches = NetworkTopology.NUMBER_OF_HOSTS-1
+    val numberOfEdgeSwitches = RoundRobinLoadBalancer.NUMBER_OF_HOSTS-1
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
 
     (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
@@ -207,7 +203,7 @@ class NetworkTopology private() {
     val list = new util.ArrayList[NetworkVm]
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_HOSTS
+      i < RoundRobinLoadBalancer.NUMBER_OF_HOSTS
     }) {
       val vm = createVm(i)
       list.add(vm)
@@ -221,8 +217,8 @@ class NetworkTopology private() {
   }
 
   private def createVm(id: Int) = {
-    val vm = new NetworkVm(id, NetworkTopology.HOST_MIPS, NetworkTopology.HOST_PES)
-    vm.setRam(NetworkTopology.HOST_RAM).setBw(NetworkTopology.HOST_BW).setSize(NetworkTopology.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
+    val vm = new NetworkVm(id, RoundRobinLoadBalancer.HOST_MIPS, RoundRobinLoadBalancer.HOST_PES)
+    vm.setRam(RoundRobinLoadBalancer.HOST_RAM).setBw(RoundRobinLoadBalancer.HOST_BW).setSize(RoundRobinLoadBalancer.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
     vm
   }
 
@@ -247,13 +243,32 @@ class NetworkTopology private() {
       }
     }
     cloudletlistsize = cloudletlistsize + numberOfCloudlets
-    //NetworkCloudlet 0 Tasks
-    NetworkTopology.addExecutionTask(networkCloudletList.get(0))
-    addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
-    //NetworkCloudlet 1 Tasks
-    addReceiveTask(networkCloudletList.get(1), networkCloudletList.get(0))
-    NetworkTopology.addExecutionTask(networkCloudletList.get(1))
+
+    createTasksForNetworkCloudlets(networkCloudletList)
     networkCloudletList
+  }
+
+  private def createTasksForNetworkCloudlets(networkCloudletList: util.ArrayList[NetworkCloudlet]): Unit = {
+    import scala.collection.JavaConversions._
+    for (cloudlet <- networkCloudletList) {
+      RoundRobinLoadBalancer.addExecutionTask(cloudlet)
+      //NetworkCloudlet 0 waits data from other Cloudlets
+      if (cloudlet.getId == 0) {
+        /*
+                       If there are a total of N Cloudlets, since the first one receives packets
+                       from all the other ones, this for creates the tasks for the first Cloudlet
+                       to wait packets from N-1 other Cloudlets.
+                        */
+        for(j<-1 until networkCloudletList.size()) {
+          addReceiveTask(cloudlet, networkCloudletList.get(j))
+        }
+      }
+      else { //The other NetworkCloudlets send data to the first one
+        addSendTask(cloudlet, networkCloudletList.get(0))
+      }
+    }
+
+    // broker.submitCloudletList(networkCloudletList)
   }
 
 
@@ -264,11 +279,11 @@ class NetworkTopology private() {
     * @return
     */
   private def createNetworkCloudlet(vm: NetworkVm) = {
-    val netCloudlet = new NetworkCloudlet(4000, NetworkTopology.HOST_PES)
-    netCloudlet.setMemory(NetworkTopology.TASK_RAM).setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+    val netCloudlet = new NetworkCloudlet(4000, RoundRobinLoadBalancer.HOST_PES)
+    netCloudlet.setMemory(RoundRobinLoadBalancer.TASK_RAM).setFileSize(RoundRobinLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(RoundRobinLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
-    netCloudlet.setFileSize(NetworkTopology.CLOUDLET_FILE_SIZE)
-    netCloudlet.setOutputSize(NetworkTopology.CLOUDLET_OUTPUT_SIZE)
+    netCloudlet.setFileSize(RoundRobinLoadBalancer.CLOUDLET_FILE_SIZE)
+    netCloudlet.setOutputSize(RoundRobinLoadBalancer.CLOUDLET_OUTPUT_SIZE)
     netCloudlet
   }
 
@@ -280,13 +295,13 @@ class NetworkTopology private() {
     */
   private def addSendTask(sourceCloudlet: NetworkCloudlet, destinationCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletSendTask(sourceCloudlet.getTasks.size)
-    task.setMemory(NetworkTopology.TASK_RAM)
+    task.setMemory(RoundRobinLoadBalancer.TASK_RAM)
     sourceCloudlet.addTask(task)
     var i = 0
     while ( {
-      i < NetworkTopology.NUMBER_OF_PACKETS_TO_SEND
+      i < RoundRobinLoadBalancer.NUMBER_OF_PACKETS_TO_SEND
     }) {
-      task.addPacket(destinationCloudlet, NetworkTopology.PACKET_DATA_LENGTH_IN_BYTES)
+      task.addPacket(destinationCloudlet, RoundRobinLoadBalancer.PACKET_DATA_LENGTH_IN_BYTES)
 
       {
         i += 1; i - 1
@@ -303,8 +318,8 @@ class NetworkTopology private() {
     */
   private def addReceiveTask(cloudlet: NetworkCloudlet, sourceCloudlet: NetworkCloudlet): Unit = {
     val task = new CloudletReceiveTask(cloudlet.getTasks.size, sourceCloudlet.getVm)
-    task.setMemory(NetworkTopology.TASK_RAM)
-    task.setExpectedPacketsToReceive(NetworkTopology.NUMBER_OF_PACKETS_TO_SEND)
+    task.setMemory(RoundRobinLoadBalancer.TASK_RAM)
+    task.setExpectedPacketsToReceive(RoundRobinLoadBalancer.NUMBER_OF_PACKETS_TO_SEND)
     cloudlet.addTask(task)
   }
 
@@ -316,7 +331,7 @@ class NetworkTopology private() {
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
-    if (random.sample() <= 0.3 && cloudletlistsize<NetworkTopology.NUMBER_OF_HOSTS) {
+    if (random.sample() <= 0.3 && cloudletlistsize<RoundRobinLoadBalancer.NUMBER_OF_HOSTS) {
       printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
 
       broker.submitCloudletList(createNetworkCloudlets)

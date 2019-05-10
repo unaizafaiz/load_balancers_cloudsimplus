@@ -28,11 +28,7 @@ import java.util.Comparator.comparingDouble
 
 
 /**
-  * Balancing the load by dynamically creating VMs,
-  * according to the arrival of Cloudlets.
-  * Cloudlets are {@link #createNewCloudlets(EventInfo) dynamically created and submitted to the broker
- * at specific time intervals}.
-  *
+  * Balancing load by horizontal scaling - NON-NETWORK Cloud
   */
 object LoadBalancerByHorizontalVmScaling {
 
@@ -60,12 +56,7 @@ object LoadBalancerByHorizontalVmScaling {
   //var because broker0 is initialised in the initialize function()
   var broker0 = new DatacenterBrokerSimple(simulation)
 
-
-  /*Enables just some level of log messages.
-           Make sure to import org.cloudsimplus.util.Log;*/
-  //Log.setLevel(ch.qos.logback.classic.Level.WARN);
-  /*You can remove the seed parameter to get a dynamic one, based on current computer time.
-          * With a dynamic seed you will get different results at each simulation run.*/ val seed = 1
+  val seed = 1
 
 
   def initialize(): Unit = {
@@ -74,12 +65,7 @@ object LoadBalancerByHorizontalVmScaling {
     createDatacenter()
     broker0 = new DatacenterBrokerSimple(simulation)
 
-    /*
-           * Defines the Vm Destruction Delay Function as a lambda expression
-           * so that the broker will wait 10 seconds before destroying an idle VM.
-           * By commenting this line, no down scaling will be performed
-           * and idle VMs will be destroyed just after all running Cloudlets
-           * are finished and there is no waiting Cloudlet. */
+
     broker0.setVmDestructionDelayFunction((vm: Vm) => 10.0)
     vmList.addAll(createListOfScalableVms(LoadBalancerByHorizontalVmScaling.VMS))
     println("VMLsearch", vmList)
@@ -101,6 +87,7 @@ object LoadBalancerByHorizontalVmScaling {
     val sortByVmId = comparingDouble((c: Cloudlet) => c.getVm.getId)
     val sortByStartTime = comparingDouble((c: Cloudlet) => c.getExecStartTime)
     finishedCloudlets.sort(sortByVmId.thenComparing(sortByStartTime))
+    print("Size ="+finishedCloudlets.size())
     new CloudletsTableBuilder(finishedCloudlets).build()
   }
 
@@ -121,7 +108,7 @@ object LoadBalancerByHorizontalVmScaling {
     */
   private def createNewCloudlets(eventInfo: EventInfo): Unit = {
     val time = eventInfo.getTime.toLong
-    if (time % LoadBalancerByHorizontalVmScaling.CLOUDLETS_CREATION_INTERVAL == 0 && time <= 50) {
+    if (time % LoadBalancerByHorizontalVmScaling.CLOUDLETS_CREATION_INTERVAL == 0 && time <= 15) {
       val numberOfCloudlets = 4
       printf("\t#Creating %d Cloudlets at time %d.\n", numberOfCloudlets, time)
       val newCloudlets = new util.ArrayList[Cloudlet](numberOfCloudlets)
@@ -202,7 +189,7 @@ object LoadBalancerByHorizontalVmScaling {
     * @return true if the VM is overloaded, false otherwise
     * @see #createHorizontalVmScaling(Vm)
     */
-  private def isVmOverloaded(vm: Vm) = vm.getCpuPercentUsage > 0.7
+  private def isVmOverloaded(vm: Vm) = vm.getCpuPercentUsage > 0.2
 
   /**
     * Creates a Vm object.
