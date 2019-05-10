@@ -62,7 +62,7 @@ object LoadBalancerByHorizontalVmScaling {
   def initialize(): Unit = {
     simulation.addOnClockTickListener(createNewCloudlets)
     createDatacenter()
-    broker0 = new DatacenterBrokerSimple(simulation)
+   // broker0 = new DatacenterBrokerSimple(simulation)
 
 
     broker0.setVmDestructionDelayFunction((vm: Vm) => 10.0)
