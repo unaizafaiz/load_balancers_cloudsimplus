@@ -31,7 +31,7 @@ import org.cloudsimplus.listeners.EventInfo
   *Load balancing by horizontal scaling of VM
   */
 object HorizontalVmScalingLB {
-  private val NUMBER_OF_HOSTS = 4
+  private val NUMBER_OF_HOSTS = 30
   private val HOST_MIPS = 1000
   private val HOST_PES = 4
   private val HOST_RAM = 512 // host memory (Megabyte)
