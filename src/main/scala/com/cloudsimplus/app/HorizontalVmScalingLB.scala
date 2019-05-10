@@ -17,11 +17,12 @@ import org.cloudbus.cloudsim.schedulers.cloudlet.{CloudletSchedulerSpaceShared, 
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
 import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.network.NetworkVm
-import org.cloudsimplus.builders.tables.CloudletsTableBuilder
+import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBuilderWithCost}
 import java.util
 import java.util.ArrayList
 
 import com.cloudsimplus.app.LoadBalancerByHorizontalVmScaling.rand
+import com.cloudsimplus.app.RoundRobinLoadBalancer.defaultConfig
 import org.cloudbus.cloudsim.distributions.UniformDistr
 import org.cloudbus.cloudsim.vms.Vm
 import org.cloudsimplus.autoscaling.HorizontalVmScalingSimple
@@ -32,15 +33,18 @@ import org.cloudsimplus.listeners.EventInfo
   *Load balancing by horizontal scaling of VM
   */
 object HorizontalVmScalingLB {
-  private val VM_PES = 2
-  private val VM_RAM = 512
-  private val VM_BW = 1000
-  private val VM_STORAGE = 10000
+  private val COST_PER_BW: Double = defaultConfig.getDouble("datacenter.cost_per_bw")
+  private val COST_PER_SEC = defaultConfig.getDouble("datacenter.cost_per_sec")
+
+  private val VM_PES = 4
+  private val VM_RAM = 2048
+  private val VM_BW = 10000
+  private val VM_STORAGE = 1000000
   private val VM_MIPS = 1000
 
-  private val NUMBER_OF_HOSTS = 50
+  private val NUMBER_OF_HOSTS = defaultConfig.getInt("hosts.number")
   private val HOST_MIPS = 1000
-  private val HOST_PES = 32
+  private val HOST_PES = 4
   private val HOST_RAM = 2048 // host memory (Megabyte)
 
   private val HOST_STORAGE = 1000000 // host storage
@@ -48,11 +52,11 @@ object HorizontalVmScalingLB {
   private val HOST_BW = 10000
   private val CLOUDLET_EXECUTION_TASK_LENGTH = 4000
   private val CLOUDLET_PES = 2
-  private val CLOUDLET_FILE_SIZE = 1024
-  private val CLOUDLET_OUTPUT_SIZE = 1024
+  private val CLOUDLET_FILE_SIZE = defaultConfig.getLong("cloudlet.file_size")
+  private val CLOUDLET_OUTPUT_SIZE = defaultConfig.getLong("cloudlet.op_size")
   private val PACKET_DATA_LENGTH_IN_BYTES = 1000
-  private val NUMBER_OF_PACKETS_TO_SEND = 10
-  private val TASK_RAM = 5000
+  private val NUMBER_OF_PACKETS_TO_SEND = 1
+  private val TASK_RAM = 100
 
   private val VMS = 4
   private val CLOUDLETS = 6
@@ -60,10 +64,10 @@ object HorizontalVmScalingLB {
   private val SCHEDULING_INTERVAL = 5
   private val CLOUDLETS_CREATION_INTERVAL = SCHEDULING_INTERVAL * 2
 
-  private val CLOUDLET_LENGTHS = Array(2000, 4000, 10000, 16000, 2000, 30000, 20000)
-  val rand = new UniformDistr(0, HorizontalVmScalingLB.CLOUDLET_LENGTHS.length, seed)
+  private val CLOUDLET_LENGTHS = 4000
+  //val rand = new UniformDistr(0, HorizontalVmScalingLB.CLOUDLET_LENGTHS.length, seed)
 
-  val seed = 1
+  //val seed = 1
 
 
 
@@ -98,7 +102,7 @@ object HorizontalVmScalingLB {
   var cloudletlistsize =0
   var createVms = 0
   var cloudletid = 0
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 1000
+  private val TIME_TO_TERMINATE_SIMULATION: Double = 2000
 
 
   val simulation = new CloudSim()
@@ -113,7 +117,7 @@ object HorizontalVmScalingLB {
     simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
     simulation.addOnClockTickListener(createNetworkCloudlets)
 
-    broker.setVmDestructionDelayFunction((vm: Vm) => 10.0)
+    broker.setVmDestructionDelayFunction((vm: Vm) => 200.0)
     vmList.addAll(createListOfScalableVms(HorizontalVmScalingLB.VMS))
     createInitialCloudlets()
     broker.submitVmList(vmList)
@@ -128,11 +132,7 @@ object HorizontalVmScalingLB {
   private def showSimulationResults(): Unit = {
     val newList = broker.getCloudletFinishedList
     val range = 0 until newList.size()
-    for(i<-range){
-      val cloudlet = newList.get(i)
-      printf("i="+i)
-    }
-    new CloudletsTableBuilder(newList).build()
+    new CloudletsTableBuilderWithCost(newList).build()
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
       println(s"\nHost "+host.getId+" data transferred: "+host.getTotalDataTransferBytes+" bytes", host.getId, host.getTotalDataTransferBytes)
@@ -154,6 +154,8 @@ object HorizontalVmScalingLB {
     })
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
     newDatacenter.setSchedulingInterval(HorizontalVmScalingLB.SCHEDULING_INTERVAL)
+    newDatacenter.getCharacteristics.setCostPerBw(HorizontalVmScalingLB.COST_PER_BW)
+    newDatacenter.getCharacteristics.setCostPerBw(HorizontalVmScalingLB.COST_PER_SEC)
     //createNetwork(newDatacenter)
     newDatacenter
   }
@@ -271,9 +273,9 @@ object HorizontalVmScalingLB {
     printf("Creating network tasks\n")
     //NetworkCloudlet 0 Tasks
     HorizontalVmScalingLB.addExecutionTask(networkCloudletList.get(0))
-    addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
+    //addSendTask(networkCloudletList.get(0), networkCloudletList.get(1))
     //NetworkCloudlet 1 Tasks
-    addReceiveTask(networkCloudletList.get(1), networkCloudletList.get(0))
+    //addReceiveTask(networkCloudletList.get(1), networkCloudletList.get(0))
     HorizontalVmScalingLB.addExecutionTask(networkCloudletList.get(1))
     //broker.submitCloudletList(cloudletList)
   }
@@ -283,7 +285,7 @@ object HorizontalVmScalingLB {
     for (cloudlet <- networkCloudletList) {
       addExecutionTask(cloudlet)
       //NetworkCloudlet 0 waits data from other Cloudlets
-      if (cloudlet.getId == 0) {
+      /*if (cloudlet.getId == 0) {
         /*
                        If there are a total of N Cloudlets, since the first one receives packets
                        from all the other ones, this for creates the tasks for the first Cloudlet
@@ -295,7 +297,7 @@ object HorizontalVmScalingLB {
       }
       else { //The other NetworkCloudlets send data to the first one
         addSendTask(cloudlet, networkCloudletList.get(0))
-      }
+      }*/
     }
   }
 
@@ -309,21 +311,23 @@ object HorizontalVmScalingLB {
     //print("Creating new cloudlets")
 
     //initial cloudlets tasks created
-    ///if(cloudletList.size()==2){
+    if(cloudletList.size()==HorizontalVmScalingLB.CLOUDLETS){
       createTasksForNetworkCloudlets(cloudletList)
-   // }
+    }
 
     //Creating new cloudlets at intervals
     val time = eventInfo.getTime.toLong
-    if (time % HorizontalVmScalingLB.CLOUDLETS_CREATION_INTERVAL == 0 && time <= 30) {
+    if (time % HorizontalVmScalingLB.CLOUDLETS_CREATION_INTERVAL == 0 && time <= 1000) {
       val numberOfCloudlets = CLOUDLETS
       printf("\t#Creating %d Cloudlets at time %d.\n", numberOfCloudlets, time)
       val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets)
       val range = 0 until numberOfCloudlets
       range.foreach { _ => {
-        val cloudlet = createNetworkCloudlet
-        cloudletList.add(cloudlet)
-        networkCloudletList.add(cloudlet)
+        if(cloudletList.size()<22) {
+          val cloudlet = createNetworkCloudlet
+          cloudletList.add(cloudlet)
+          networkCloudletList.add(cloudlet)
+        }
       }
       }
       broker.submitCloudletList(networkCloudletList)
@@ -347,7 +351,7 @@ object HorizontalVmScalingLB {
   private def createNetworkCloudlet = {
     val id = cloudletid
     cloudletid+=1
-    val length = HorizontalVmScalingLB.CLOUDLET_LENGTHS(rand.sample.toInt)
+    val length = HorizontalVmScalingLB.CLOUDLET_LENGTHS
 
     val netCloudlet = new NetworkCloudlet(id, length, HorizontalVmScalingLB.CLOUDLET_PES)
     netCloudlet/*.setMemory(HorizontalVmScalingLB.TASK_RAM)*/.setFileSize(HorizontalVmScalingLB.CLOUDLET_FILE_SIZE).setOutputSize(HorizontalVmScalingLB.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
