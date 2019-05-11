@@ -1,9 +1,23 @@
 ### CS 441 Course Project - Create and evaluate CloudSim Plus simulations that use different load balancing algorithms
 ### Submission By - Unaiza Faiz, Tanveer Shaikh, Joylyn Lewis 
 
-### Details of important files included in the directory structure:
-- /src/main/resources folder contains the files **.........conf
+### Details of important files included in the repository:
+- /src/main/resources folder contains the files **..............conf contains the configuration settings for running the simulation  
+- /src/main/scala/com/cloudsimplus/RandomLoadBalancer.scala contains the implementation of the Random algorithm
+- /src/main/scala/com/cloudsimplus/RoundRobinLoadBalancer.scala contains the implementation of the Round Robin algorithm  
+- /src/main/scala/com/cloudsimplus/appHorizontalVmScalingLB.scala contains the implementation of the Horizontal VM Scaling algorithm  
+- /src/test/scala/com/cloudsimplus/..........................scala contains the unit tests written for the application
+- 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
 
+**For Building the Docker image:**
+
+Command to build image: **docker build -f Dockerfile -t dockerchess .**  
+Command to run the image: **docker run -p 8080:8080 dockerchess**  
+
+The generated Docker image hs been pushed to the Docker Hub public repository: **https://cloud.docker.com/repository/docker/joylyn133/joylyn_lewis_hw4_dockerimage**  
+Account name: **joylyn133**  
+Repository name: **joylyn_lewis_hw4_dockerimage**  
+Tag name: **hw4**  
 
 
 ### How to run the code:
@@ -15,7 +29,7 @@
 
 
 
-### Approach towards designing the simulations:
+### Approach towards designing the simulation:
 The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a network cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
 
 We use three different load balancers in our simulation:
@@ -53,12 +67,10 @@ The simulations are carried out on the same below Cloud Network Architecture:
 **Cons:**  
 - The network architecture assumed here is on a comparatively lower scale when considered from a real world cloud computing environment. However, we limited our scaling to a basic level due to the challenges enlisted below.
 
-
 **Challenges faced**
 - We attempted scaling our basic architecture to assume higher number of Datacenters, VMs, Hosts along with higher number of dynamic cloudlets. While we were able to achieve scaling with the simple Cloudlet tasks designed 
 for Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of packets between the tasks designed for Network Cloudlets. As using Network Cloudlets was a pre-requisite for the project, we performed our simulation on a
 limited scale network cloud environment.
-
 
 **Conclusion:**  
 Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple statis algorithms like Random and Round Robin.
