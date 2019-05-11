@@ -9,7 +9,6 @@ import org.cloudbus.cloudsim.cloudlets.network.NetworkCloudlet
   * Implementation object to run the round robin load balancer
   */
 object RoundRobinLoadBalancer {
-
   def main(args: Array[String]): Unit = {
     new RoundRobinLoadBalancer
   }
