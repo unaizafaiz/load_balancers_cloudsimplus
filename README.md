@@ -3,10 +3,10 @@
 
 ### Details of important files included in the repository:
 - /src/main/resources folder contains the files **..............conf contains the configuration settings for running the simulation  
-- /src/main/scala/com/cloudsimplus/RandomLoadBalancer.scala contains the implementation of the Random algorithm
-- /src/main/scala/com/cloudsimplus/RoundRobinLoadBalancer.scala contains the implementation of the Round Robin algorithm  
-- /src/main/scala/com/cloudsimplus/appHorizontalVmScalingLB.scala contains the implementation of the Horizontal VM Scaling algorithm  
-- /src/test/scala/com/cloudsimplus/..........................scala contains the unit tests written for the application
+- /src/main/scala/com/cloudsimplus/app/RandomLoadBalancer.scala contains the implementation of the Random algorithm
+- /src/main/scala/com/cloudsimplus/app/RoundRobinLoadBalancer.scala contains the implementation of the Round Robin algorithm  
+- /src/main/scala/com/cloudsimplus/app/HorizontalVmScalingLB.scala contains the implementation of the Horizontal VM Scaling algorithm  
+- /src/test/scala/com/cloudsimplus/app/..........................scala contains the unit tests written for the application
 - 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
 
 **For Building the Docker image:**
