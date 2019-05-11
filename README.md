@@ -1,40 +1,51 @@
 ### CS 441 Course Project - Create and evaluate CloudSim Plus simulations that use different load balancing algorithms
 ### Submission By - Unaiza Faiz, Tanveer Shaikh, Joylyn Lewis 
 
-### Details of important files included in the repository:
-- /src/main/resources folder contains the files **..............conf contains the configuration settings for running the simulation  
-- /src/main/scala/com/cloudsimplus/app/RandomLoadBalancer.scala contains the implementation of the Random algorithm
-- /src/main/scala/com/cloudsimplus/app/RoundRobinLoadBalancer.scala contains the implementation of the Round Robin algorithm  
-- /src/main/scala/com/cloudsimplus/app/HorizontalVmScalingLB.scala contains the implementation of the Horizontal VM Scaling algorithm  
-- /src/test/scala/com/cloudsimplus/app/..........................scala contains the unit tests written for the application
-- 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
+
+### How to run the code:
+1. Clone the repository to your local machine using 
+``git clone git@bitbucket.org:unaizafaiz/unaiza_faiz_project.git ``
+2. Go to the cloned repository location on your terminal and compile the program using
+``sbt clean compile run``
+3. When prompted to enter a number to select main class. Enter the number of the desired load balancer class you want to run. 
+4. The output prints a table of results for execution of 500 cloudlets. 
 
 **For Building the Docker image:**
 
-Command to build image: **docker build -f Dockerfile -t dockerchess .**  
-Command to run the image: **docker run -p 8080:8080 dockerchess**  
+Command to build image: **docker build -f Dockerfile -t docker-cloudsim-plus .**  
+Command to run the image: **docker run -it docker-cloudsim-plus**  
 
-The generated Docker image hs been pushed to the Docker Hub public repository: **https://cloud.docker.com/repository/docker/joylyn133/joylyn_lewis_hw4_dockerimage**  
-Account name: **joylyn133**  
-Repository name: **joylyn_lewis_hw4_dockerimage**  
-Tag name: **hw4**  
-
-
-### How to run the code:
+The generated Docker image hs been pushed to the Docker Hub public repository: **https://cloud.docker.com/repository/docker/unaizafaiz/unaiza_faiz_project_dockerimage**  
+Account name: **unaizafaiz**  
+Repository name: **unaiza_faiz_project_dockerimage**  
+Tag name: **project**  
 
 
+#### Structure of the project folder:
+- /src/main/resources folder contains the files:
+    - default.conf that contains the configuration settings for running the simulation  
+    - PlanetLab trace file - used to test CPU utilization model using trace files
+- /src/main/scala/com/cloudsimplus/app:
+    - NetworkAbstract.scala contains an abstract class that defines network cloud simulation methods and must be extended to implement different load balancers
+    - RandomLoadBalancer.scala contains the implementation of the Random algorithm (extend NetworkVM)
+    - RoundRobinLoadBalancer.scala contains the implementation of the Round Robin algorithm  (extends NetworkVM)
+    - HorizontalVmScalingLB.scala contains the implementation of the Horizontal VM Scaling algorithm  
+- /src/main/java
+    - org.cloudbus.cloudsim.utilzationmodels/UtilizationModelHalf.java creates a CPU utilization model that uses 50% of the CPU resources at a time
+    - org.cloudsimplus.builders.tables/CloudletsTableBuilderWithCost.java extend the cloudsimplus CloudletsTableBuilder to print the results with total cost for each cloudlet
+- 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
 
 
-### Unit Tests included in the code:
+#### Unit Tests included in the code:
 
 
 
-### Approach towards designing the simulation:
+#### Approach towards designing the simulation:
 The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a network cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
 
 We use three different load balancers in our simulation:
-- Random: Random is a static algorithm that is the fastest and simplest to implement. It uses a random number generator to assign cloudlets to VMs. We use the Random algorithm as the baseline for evaluating the simulation.
-- Round Robin: Round robin is another static load balancing algorithm where each task on the server will be given an equal interval of time and an equal share of all resources in sequence.
+- Random: Random is a static algorithm that uses a random number generator to assign cloudlets to VMs. We use the Random algorithm as the baseline for evaluating the simulation.
+- Round Robin: Round robin is another static load balancing algorithm where each cloudlet will be assigned to VM in a round - robin sequence. Each cloudlet thus will be given an equal interval of time and an equal share of all resources in sequence.
 - Horizontal VM Scaling: Horizontal VM Scaling is a dynamic load balancing algorithm that allows defining the condition to identify an overloaded VM, which in our case is based on current CPU utilization exceeding 70%, which will result in the creation of additional VMs.
 
 As part of our evaluation, we assume the below Null and Alternate Hypotheses:
@@ -42,17 +53,28 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Null Hypothesis:** Horizontal VM Scaling algorithm performs better than the Random and Round Robin algorithms  
 **Alternate Hypothesis:** No improvement in performance can be seen with Horizontal VM Scaling algorithm as compared with the Random and Round Robin algorithms  
 
-The simulations are carried out on the same below Cloud Network Architecture:  
-- Number of Datacenters:  
-- Number of VMs:  
-- Number of Hosts:  
-- Number of Cloudlets:  
+**Architecture of the Cloud Network**
+![CloudArchitecture](./CloudSimPlusArchitecture(cloudcraft).png)
+
+The simulations are carried out Cloud Network Architecture with following characteristics:  
+- Number of Datacenters:  1
+- Number of VMs:  750
+- Number of Hosts:  1000
+- Number of Cloudlets:  500
+
 
 **Evalution of the simulation:**  
+
+The results of the simulation are in the file [results.xlsx](./results.xlsx) 
+
+We consider Cost vs Length while performing statistical regression.
+  
+We found that the p-value for Horizontal VM Scaling to be 0, when compared to RoundRobin and random load balancers. 
+This shows statistical significance.
   
 
 **Results using Random alogrithm:**  
-
+Random algorithm took higher time to execute when compared to other two algorithm. It took >3000 seconds to complete executing 500 cloudlets
 
 **Results using Round Robin algorithm:**  
 
@@ -73,7 +95,7 @@ for Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of p
 limited scale network cloud environment.
 
 **Conclusion:**  
-Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple statis algorithms like Random and Round Robin.
+Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple static algorithms like Random and Round Robin.
 
 
 
