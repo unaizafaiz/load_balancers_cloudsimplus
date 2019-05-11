@@ -20,17 +20,22 @@ import org.cloudsimplus.builders.tables.CloudletsTableBuilderWithCost
 import java.util
 import java.util.ArrayList
 
-import com.cloudsimplus.app.RoundRobinLoadBalancer.defaultConfig
+import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
 import org.cloudbus.cloudsim.vms.Vm
 import org.cloudsimplus.autoscaling.HorizontalVmScalingSimple
 import org.cloudsimplus.listeners.EventInfo
+import org.slf4j.{Logger, LoggerFactory}
 
 
 /**
   *Load balancing by horizontal scaling of VM
   */
 object HorizontalVmScalingLoadBalancer {
+
+  val logger : Logger = LoggerFactory.getLogger(NetworkAbstract.getClass)
+
+  val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
 
   private val COST_PER_BW: Double = defaultConfig.getDouble("datacenter.cost_per_bw")
   private val COST_PER_SEC: Double = defaultConfig.getDouble("datacenter.cost_per_sec")
@@ -67,39 +72,14 @@ object HorizontalVmScalingLoadBalancer {
   private val SCHEDULING_INTERVAL = defaultConfig.getInt("simulation.scheduling_interval")
   private val CLOUDLETS_CREATION_INTERVAL = SCHEDULING_INTERVAL * 2
 
-  //val rand = new UniformDistr(0, HorizontalVmScalingLB.CLOUDLET_LENGTHS.length, seed)
-
-  //val seed = 1
-
-
-
-
   /**
-    * Starts the execution of the example.
+    * Starts the execution of the horizontal scaling load balancer simulation
     *
     * @param args command line arguments
     */
   def main(args: Array[String]): Unit = {
     initialise()
   }
-
-  /**
-    * Adds an execution task to the list of tasks of the given
-    * {@link NetworkCloudlet}.
-    *
-    * @param cloudlet the { @link NetworkCloudlet} the task will belong to
-    */
-  private def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
-   // print("Executing cloudlet "+cloudlet.getId)
-    val task = new CloudletExecutionTask(cloudlet.getTasks.size, (cloudlet.getTotalLength/2))
-    task.setMemory(TASK_RAM)
-    cloudlet.addTask(task)
-  }
-  /**
-    * Creates, starts, stops the simulation and shows results.
-    */
-  println("Starting " + getClass.getSimpleName)
-
 
   var cloudletlistsize =0
   var createVms = 0
@@ -115,7 +95,11 @@ object HorizontalVmScalingLoadBalancer {
   val cloudletList = new util.ArrayList[NetworkCloudlet]()
 
 
-  def initialise()={
+  /**
+    * Creates, starts, stops the simulation and shows results.
+    */
+  private def initialise()={
+    logger.info("Starting " + getClass.getSimpleName)
     simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
     simulation.addOnClockTickListener(createNetworkCloudlets)
 
@@ -130,11 +114,11 @@ object HorizontalVmScalingLoadBalancer {
   }
 
 
-  /*
-  * Change these 4 parameters for cost calculation:
-  * cloudlet_file_size, cloudlet_output_size, datacenter_cost_per_bw and datacenter_cost_per_sec
-  */
+  /**
+    * Get total cost of the simulation
+    */
   private def showTotalCost(): Unit = {
+    logger.info("Calculate total cost")
     var totalCost = 0.0D
     var meantime = 0.0D
     val newList = broker.getCloudletFinishedList
@@ -154,6 +138,8 @@ object HorizontalVmScalingLoadBalancer {
     */
 
   private def showSimulationResults(): Unit = {
+    logger.info("Print Simulation results")
+
     val newList = broker.getCloudletFinishedList
     val range = 0 until newList.size()
     new CloudletsTableBuilderWithCost(newList).build()
@@ -172,6 +158,8 @@ object HorizontalVmScalingLoadBalancer {
     * @return the Datacenter
     */
   private def createDatacenter = {
+    logger.info("Creating a datacenter")
+
     val numberOfHosts = HorizontalVmScalingLoadBalancer.NUMBER_OF_HOSTS * AggregateSwitch.PORTS * RootSwitch.PORTS
 
     val hostList = new util.ArrayList[Host]
@@ -192,6 +180,9 @@ object HorizontalVmScalingLoadBalancer {
     * @return
     */
   private def createHost = {
+
+    logger.info("Creating a new NetworkHost")
+
     val peList = createPEs(HorizontalVmScalingLoadBalancer.HOST_PES, HorizontalVmScalingLoadBalancer.HOST_MIPS)
     new NetworkHost(HorizontalVmScalingLoadBalancer.HOST_RAM, HorizontalVmScalingLoadBalancer.HOST_BW, HorizontalVmScalingLoadBalancer.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
   }
@@ -203,6 +194,8 @@ object HorizontalVmScalingLoadBalancer {
     * @return
     */
   private def createPEs(numberOfPEs: Int, mips: Long) = {
+    logger.info("Creating "+numberOfPEs+" PEs with mips "+mips)
+
     val peList = new util.ArrayList[Pe]
     val range = 0 until numberOfPEs
     range.foreach(_->peList.add(new PeSimple(mips, new PeProvisionerSimple)))
@@ -215,6 +208,8 @@ object HorizontalVmScalingLoadBalancer {
     * @param datacenter Datacenter where the network will be created
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
+
+    logger.info("Creating internal network for "+datacenter)
 
     val numberOfEdgeSwitches = HorizontalVmScalingLoadBalancer.NUMBER_OF_HOSTS
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
@@ -257,6 +252,8 @@ object HorizontalVmScalingLoadBalancer {
     * @see #createHorizontalVmScaling(Vm)
     */
   private def createListOfScalableVms(numberOfVms: Int) = {
+    logger.info("Creating  "+numberOfVms+" scalable VMs")
+
     val newList = new util.ArrayList[NetworkVm](numberOfVms)
     val range = 0 until numberOfVms
     range.foreach{ i =>
@@ -267,8 +264,16 @@ object HorizontalVmScalingLoadBalancer {
     newList
   }
 
+  /**
+    * Creates a virtual machine with the given id
+    *
+    * @return instance of NetworkVM
+    */
   private def createVm = {
     val id = createVms
+
+    logger.info("Creating NetworkVM with id "+id)
+
     createVms+=1
     val vm = new NetworkVm(id, HorizontalVmScalingLoadBalancer.VM_MIPS, HorizontalVmScalingLoadBalancer.VM_PES)
     vm.setRam(HorizontalVmScalingLoadBalancer.VM_RAM).setBw(HorizontalVmScalingLoadBalancer.VM_BW).setSize(HorizontalVmScalingLoadBalancer.VM_STORAGE).setCloudletScheduler(new CloudletSchedulerSpaceShared)
@@ -282,6 +287,8 @@ object HorizontalVmScalingLoadBalancer {
     * @see #createListOfScalableVms(int)
     */
   private def createHorizontalVmScaling(vm: Vm): Unit = {
+    logger.info("Creating a horizontalVMSCaling object for VM "+vm.getId)
+
     val horizontalScaling = new HorizontalVmScalingSimple
     horizontalScaling.setVmSupplier(() => {
       createVm
@@ -307,20 +314,20 @@ object HorizontalVmScalingLoadBalancer {
     * @return the list of create NetworkCloudlets
     */
   private def createInitialCloudlets() = {
+    logger.info("Creating initial cloudlets")
+
     val range = 0 until HorizontalVmScalingLoadBalancer.INITIAL_CLOUDLETS
     range.foreach{_=>
-     // print("in range")
       cloudletList.add(createNetworkCloudlet)
     }
-
-    //Creating tasks here is leading to an error as VM is not assigned to cloudlets initially
-    //Uncomment to check the error
 
     createTasksForNetworkCloudlets(cloudletList)
 
   }
 
   private def createTasksForNetworkCloudlets(networkCloudletList: util.ArrayList[NetworkCloudlet]): Unit = {
+    logger.info("Creating tasks for network cloudlets")
+
     import scala.collection.JavaConversions._
     for (cloudlet <- networkCloudletList) {
       addExecutionTask(cloudlet)
@@ -334,6 +341,7 @@ object HorizontalVmScalingLoadBalancer {
     * @return the list of create NetworkCloudlets
     */
   private def createNetworkCloudlets(eventInfo: EventInfo): Unit = {
+    logger.info("Creating new cloudlet dynamically at runtime")
 
     //Creating new cloudlets at intervals
     val time = eventInfo.getTime.toLong
@@ -364,16 +372,14 @@ object HorizontalVmScalingLoadBalancer {
     * @return
     */
   private def createNetworkCloudlet = {
+    logger.info("Creating network cloudlet")
+
     val id = cloudletid
     cloudletid+=1
-    //val length = HorizontalVmScalingLB.CLOUDLET_EXECUTION_TASK_LENGTH
-
     val rand = id % CLOUDLET_LENGTHS.size
     val length = CLOUDLET_LENGTHS(rand)
     val netCloudlet = new NetworkCloudlet(id, length, HorizontalVmScalingLoadBalancer.CLOUDLET_PES)
-    //print("Creating cloudlet with size "+length+" "+netCloudlet.getTotalLength)
     netCloudlet.setMemory(HorizontalVmScalingLoadBalancer.TASK_RAM).setFileSize(HorizontalVmScalingLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(HorizontalVmScalingLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
-    //netCloudlet.setVm(vm)
     netCloudlet
   }
 
@@ -384,6 +390,8 @@ object HorizontalVmScalingLoadBalancer {
     * @param destinationCloudlet the destination { @link NetworkCloudlet} to send packets to
     */
   private def addSendTask(sourceCloudlet: NetworkCloudlet, destinationCloudlet: NetworkCloudlet): Unit = {
+    logger.info("Adding send task from cloudlet "+sourceCloudlet.getId+" to cloudlet "+destinationCloudlet.getId)
+
     val task = new CloudletSendTask(sourceCloudlet.getTasks.size)
     task.setMemory(HorizontalVmScalingLoadBalancer.TASK_RAM)
     sourceCloudlet.addTask(task)
@@ -401,10 +409,23 @@ object HorizontalVmScalingLoadBalancer {
     * @param sourceCloudlet the { @link NetworkCloudlet} expected to receive packets from
     */
   private def addReceiveTask(cloudlet: NetworkCloudlet, sourceCloudlet: NetworkCloudlet): Unit = {
-    //print("Source cloudlet "+sourceCloudlet.getId+" is associated with VM "+sourceCloudlet.getVm.getId)
+    logger.info("Adding receiving task from cloudlet "+sourceCloudlet.getId+" to cloudlet "+cloudlet.getId)
     val task = new CloudletReceiveTask(cloudlet.getTasks.size, sourceCloudlet.getVm)
     task.setMemory(HorizontalVmScalingLoadBalancer.TASK_RAM)
     task.setExpectedPacketsToReceive(HorizontalVmScalingLoadBalancer.NUMBER_OF_PACKETS_TO_SEND)
+    cloudlet.addTask(task)
+  }
+
+  /**
+    * Adds an execution task to the list of tasks of the given
+    * {@link NetworkCloudlet}.
+    *
+    * @param cloudlet the { @link NetworkCloudlet} the task will belong to
+    */
+  private def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
+    logger.info("Adding execution task for cloudlet "+cloudlet.getId)
+    val task = new CloudletExecutionTask(cloudlet.getTasks.size, (cloudlet.getTotalLength/2))
+    task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
   }
 

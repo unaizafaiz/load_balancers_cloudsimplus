@@ -103,6 +103,8 @@ abstract class NetworkAbstract {
     * Get total cost of the simulation
    */
   private def showTotalCost(): Unit = {
+    logger.info("Calculate total cost")
+
     var totalCost = 0.0D
     var meantime = 0.0D
     val newList = broker.getCloudletFinishedList
@@ -122,6 +124,8 @@ abstract class NetworkAbstract {
     * Print Simulation results
     */
   private def showSimulationResults(): Unit = {
+    logger.info("Print Simulation results")
+
     val newList = broker.getCloudletFinishedList
     new CloudletsTableBuilderWithCost(newList).build()
     println("Number of Actual cloudlets = "+NetworkAbstract.INITIAL_CLOUDLETS+"; dynamic cloudlets = "+(cloudletList.size()-NetworkAbstract.INITIAL_CLOUDLETS))
@@ -142,6 +146,8 @@ abstract class NetworkAbstract {
     * @return the Datacenter
     */
   private def createDatacenter = {
+    logger.info("Creating a datacenter")
+
     val numberOfHosts = NetworkAbstract.NUMBER_OF_HOSTS * AggregateSwitch.PORTS * RootSwitch.PORTS
 
     val hostList = new util.ArrayList[Host]
@@ -158,12 +164,29 @@ abstract class NetworkAbstract {
     newDatacenter
   }
 
+  /**
+    * Creates the Host.
+    *
+    * @return the NetworkHost
+    */
+
   private def createHost = {
+    logger.info("Creating a new NetworkHost")
+
     val peList = createPEs(NetworkAbstract.HOST_PES, NetworkAbstract.HOST_MIPS)
     new NetworkHost(NetworkAbstract.HOST_RAM, NetworkAbstract.HOST_BW, NetworkAbstract.HOST_STORAGE, peList).setRamProvisioner(new ResourceProvisionerSimple).setBwProvisioner(new ResourceProvisionerSimple).setVmScheduler(new VmSchedulerTimeShared)
   }
 
+  /**
+    * Creates the list of PE with mips as specified
+    * @param numberOfPEs size of the list
+    * @param mips value of mips for each PE in the list
+    * @return the Datacenter
+    */
+
   private def createPEs(numberOfPEs: Int, mips: Long) = {
+    logger.info("Creating "+numberOfPEs+" PEs with mips "+mips)
+
     val peList = new util.ArrayList[Pe]
     val range = 0 until numberOfPEs
     range.foreach { _ =>
@@ -178,6 +201,7 @@ abstract class NetworkAbstract {
     * @param datacenter Datacenter where the network will be created
     */
   private def createNetwork(datacenter: NetworkDatacenter): Unit = {
+    logger.info("Creating internal network for "+datacenter)
 
     val numberOfEdgeSwitches = NetworkAbstract.NUMBER_OF_HOSTS - 1
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
@@ -195,6 +219,21 @@ abstract class NetworkAbstract {
     }
   }
 
+  /**
+    * Gets the index of a switch where a Host will be connected,
+    * considering the number of ports the switches have.
+    * Ensures that each set of N Hosts is connected to the same switch
+    * (where N is defined as the number of switch's ports).
+    * Since the host ID is long but the switch array index is int,
+    * the module operation is used safely convert a long to int
+    * For instance, if the id is 2147483648 (higher than the max int value 2147483647),
+    * it will be returned 0. For 2147483649 it will be 1 and so on.
+    *
+    * @param host        the Host to get the index of the switch to connect to
+    * @param switchPorts the number of ports (N) the switches where the Host will be connected have
+    * @return the index of the switch to connect the host
+    */
+
   def getSwitchIndex(host: NetworkHost, switchPorts: Int): Long = host.getId % Integer.MAX_VALUE.round / switchPorts
 
   /**
@@ -205,6 +244,7 @@ abstract class NetworkAbstract {
     * @return the list of created VMs
     */
   private def createAndSubmitVMs(broker: DatacenterBroker) = {
+    logger.info("Creating and submit vms to broker "+broker)
     val list = new util.ArrayList[NetworkVm]
     val range = 0 until NetworkAbstract.NUMBER_OF_VMS
     range.foreach { hostId =>
@@ -215,7 +255,15 @@ abstract class NetworkAbstract {
     list
   }
 
+  /**
+    * Creates a virtual machine with the given id
+    *
+    * @param id The VM id
+    * @return instance of NetworkVM
+    */
+
   private def createVm(id: Int) = {
+    logger.info("Creating NetworkVM with id "+id)
     val vm = new NetworkVm(id, NetworkAbstract.VM_MIPS, NetworkAbstract.VM_PES)
     vm.setRam(NetworkAbstract.VM_RAM).setBw(NetworkAbstract.VM_BW).setSize(NetworkAbstract.VM_STORAGE).setCloudletScheduler(new CloudletSchedulerSpaceShared)
     vm
@@ -224,12 +272,21 @@ abstract class NetworkAbstract {
   /**
     * Creates a list of {@link NetworkCloudlet} that together represents the
     * distributed processes of a given fictitious application.
-    *
+    * Must be implemented my the implementing class
     * @return the list of create NetworkCloudlets
     */
   protected def createNetworkCloudlets: util.ArrayList[NetworkCloudlet]
 
+
+
+  /**
+    * Creates execution, send and receive tasks for cloudlets
+    * @param networkCloudletList <ArrayList> cloudlets
+    *
+    */
+
   protected def createTasksForNetworkCloudlets(networkCloudletList: util.ArrayList[NetworkCloudlet]): Unit = {
+    logger.info("Creating tasks for network cloudlets")
     import scala.collection.JavaConversions._
     for (cloudlet <- networkCloudletList) {
       addExecutionTask(cloudlet)
@@ -248,8 +305,6 @@ abstract class NetworkAbstract {
         addSendTask(cloudlet, networkCloudletList.get(0))
       }
     }
-
-    // broker.submitCloudletList(networkCloudletList)
   }
 
 
@@ -260,9 +315,11 @@ abstract class NetworkAbstract {
     * @return
     */
   protected def createNetworkCloudlet(vm: NetworkVm) = {
+    val id = cloudletList.size()
+    logger.info("Creating network cloudlet")
     val rand = cloudletList.size() % NetworkAbstract.CLOUDLET_LENGTHS.size
     val length = NetworkAbstract.CLOUDLET_LENGTHS(rand)
-    val netCloudlet = new NetworkCloudlet(length, NetworkAbstract.CLOUDLET_PES)
+    val netCloudlet = new NetworkCloudlet(id, length, NetworkAbstract.CLOUDLET_PES)
     netCloudlet.setMemory(NetworkAbstract.TASK_RAM).setFileSize(NetworkAbstract.CLOUDLET_FILE_SIZE).setOutputSize(NetworkAbstract.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
     netCloudlet
@@ -275,6 +332,8 @@ abstract class NetworkAbstract {
     * @param destinationCloudlet the destination { @link NetworkCloudlet} to send packets to
     */
   private def addSendTask(sourceCloudlet: NetworkCloudlet, destinationCloudlet: NetworkCloudlet): Unit = {
+    logger.info("Adding send task from cloudlet "+sourceCloudlet.getId+" to cloudlet "+destinationCloudlet.getId)
+
     val task = new CloudletSendTask(sourceCloudlet.getTasks.size)
     task.setMemory(NetworkAbstract.TASK_RAM)
     sourceCloudlet.addTask(task)
@@ -292,6 +351,7 @@ abstract class NetworkAbstract {
     * @param sourceCloudlet the { @link NetworkCloudlet} expected to receive packets from
     */
   private def addReceiveTask(cloudlet: NetworkCloudlet, sourceCloudlet: NetworkCloudlet): Unit = {
+    logger.info("Adding receiving task from cloudlet "+sourceCloudlet.getId+" to cloudlet "+cloudlet.getId)
     val task = new CloudletReceiveTask(cloudlet.getTasks.size, sourceCloudlet.getVm)
     task.setMemory(NetworkAbstract.TASK_RAM)
     task.setExpectedPacketsToReceive(NetworkAbstract.NUMBER_OF_PACKETS_TO_SEND)
@@ -305,6 +365,7 @@ abstract class NetworkAbstract {
     * @param cloudlet the { @link NetworkCloudlet} the task will belong to
     */
   private def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
+    logger.info("Adding execution task for cloudlet "+cloudlet.getId)
     val task = new CloudletExecutionTask(cloudlet.getTasks.size, (cloudlet.getTotalLength/2))
     task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
@@ -312,14 +373,14 @@ abstract class NetworkAbstract {
 
   /**
     * Simulates the dynamic arrival of Cloudlets, randomly during simulation runtime.
-    * At any time the simulation clock updates, a new Cloudlet will be
-    * created with a probability of 30%.
+    * At any time the simulation clock updates or the number of cloudlets created is less than specified,
+    * a new Cloudlet will be created with a probability specified in RANDOM_SAMPLE.
     *
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
     if (random.sample() <= NetworkAbstract.RANDOM_SAMPLE && cloudletlistsize != NetworkAbstract.NUMBER_OF_CLOUDLETS) {
-      printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
+      logger.info("\n#Randomly creating more cloudlets at time "+ evt.getTime+"\n")
       broker.submitCloudletList(createNetworkCloudlets)
     }
   }
