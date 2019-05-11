@@ -113,12 +113,10 @@ abstract class NetworkAbstract {
       totalCost = totalCost + c.getTotalCost
       meantime = meantime + c.getActualCpuTime
     })
-    meantime = meantime/cloudletList.size()
+
     println("Total cost of execution of " + newList.size + " Cloudlets = $" + Math.round(totalCost * 100D)/100D)
-    println("mean cost of execution of " + newList.size + " Cloudlets = $" + (totalCost/newList.size()))
-
-    println("Total mean time of actualCPUTime for " + newList.size + " Cloudlets = " + meantime)
-
+    println("Mean cost of execution of " + newList.size + " Cloudlets = $" + Math.round(totalCost/newList.size()* 100D)/100D)
+    println("Total mean time of actualCPUTime for " + newList.size + " Cloudlets = " +Math.round(meantime/cloudletList.size()* 100D)/100D)
   }
 
   /**
@@ -133,7 +131,8 @@ abstract class NetworkAbstract {
 
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
-      println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
+      if(host.getTotalDataTransferBytes>0)
+        println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
     }
 
     showTotalCost()

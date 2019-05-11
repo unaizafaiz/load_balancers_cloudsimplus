@@ -34,7 +34,7 @@ import org.slf4j.{Logger, LoggerFactory}
   */
 object HorizontalVmScalingLoadBalancer {
 
-  val logger : Logger = LoggerFactory.getLogger(NetworkAbstract.getClass)
+  val logger : Logger = LoggerFactory.getLogger(HorizontalVmScalingLoadBalancer.getClass)
 
   val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
 
@@ -82,12 +82,15 @@ object HorizontalVmScalingLoadBalancer {
     initialise()
   }
 
+  //Variables required for creating ids of VMs and cloudlet
   var cloudletlistsize =0
   var createVms = 0
   var cloudletid = 0
+
   private val TIME_TO_TERMINATE_SIMULATION: Double = defaultConfig.getInt("simulation.time_to_terminate")
 
 
+  //Initialising varaibles
   val simulation = new CloudSim()
   private var random = new UniformDistr()
   val datacenter: NetworkDatacenter = createDatacenter
@@ -129,8 +132,8 @@ object HorizontalVmScalingLoadBalancer {
   }
   )
     println("Total cost of execution of " + newList.size + " Cloudlets = $" + Math.round(totalCost * 100D)/100D)
-    println("mean cost of execution of " + newList.size + " Cloudlets = $" + (totalCost/newList.size()))
-    println("Total mean time of actualCPUTime for " + newList.size + " Cloudlets = " + meantime/cloudletList.size())
+    println("Mean cost of execution of " + newList.size + " Cloudlets = $" + Math.round(totalCost/newList.size()* 100D)/100D)
+    println("Total mean time of actualCPUTime for " + newList.size + " Cloudlets = " +Math.round(meantime/cloudletList.size()* 100D)/100D)
 
   }
 
@@ -147,7 +150,8 @@ object HorizontalVmScalingLoadBalancer {
     println("Number of Actual cloudlets = "+INITIAL_CLOUDLETS+"; dynamic cloudlets = "+(cloudletList.size()-INITIAL_CLOUDLETS))
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
-      println(s"\nHost "+host.getId+" data transferred: "+host.getTotalDataTransferBytes+" bytes")
+      if(host.getTotalDataTransferBytes>0)
+        println(s"\nHost "+host.getId+" data transferred: "+host.getTotalDataTransferBytes+" bytes")
     }
 
     println(this.getClass.getSimpleName + " finished!")
@@ -361,7 +365,6 @@ object HorizontalVmScalingLoadBalancer {
       }
       broker.submitCloudletList(networkCloudletList)
       createTasksForNetworkCloudlets(networkCloudletList)
-      networkCloudletList
     }
   }
 
