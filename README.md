@@ -42,11 +42,11 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Null Hypothesis:** Horizontal VM Scaling algorithm performs better than the Random and Round Robin algorithms  
 **Alternate Hypothesis:** No improvement in performance can be seen with Horizontal VM Scaling algorithm as compared with the Random and Round Robin algorithms  
 
-The simulations are carried out on the same below Cloud Network Architecture:
-- Number of Datacenters:
-- Number of VMs:
-- Number of Hosts:
-- Number of Cloudlets:
+The simulations are carried out on the same below Cloud Network Architecture:  
+- Number of Datacenters:  
+- Number of VMs:  
+- Number of Hosts:  
+- Number of Cloudlets:  
 
 **Evalution of the simulation:**  
   
@@ -61,7 +61,7 @@ The simulations are carried out on the same below Cloud Network Architecture:
 
 **Pros and Cons of our approach:**
 **Pros:**  
-- We apply the theoretical concepts learnt as part of CS 441 course in designing the network architecture and in developing our Null Hypothesis
+- We apply the theoretical concepts learnt as part of CS 441 course in designing the network architecture and in developing our Null Hypothesis  
 - Our statistical results help in proving the hypothesis
 
 **Cons:**  
