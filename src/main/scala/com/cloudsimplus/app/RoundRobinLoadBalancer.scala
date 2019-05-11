@@ -3,7 +3,6 @@ package com.cloudsimplus.app
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple
 import org.cloudbus.cloudsim.brokers.DatacenterBroker
 import org.cloudbus.cloudsim.brokers.DatacenterBrokerSimple
-import org.cloudbus.cloudsim.cloudlets.Cloudlet
 import org.cloudbus.cloudsim.cloudlets.network._
 import org.cloudbus.cloudsim.core.CloudSim
 import org.cloudbus.cloudsim.datacenters.network.NetworkDatacenter
@@ -22,6 +21,7 @@ import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBu
 import java.util
 import java.util.ArrayList
 
+import com.cloudsimplus.app.RoundRobinLoadBalancer.defaultConfig
 import org.slf4j.{Logger, LoggerFactory}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
@@ -33,28 +33,45 @@ import org.cloudsimplus.listeners.EventInfo
   */
 object RoundRobinLoadBalancer {
 
+
   val logger : Logger = LoggerFactory.getLogger(RoundRobinLoadBalancer.getClass)
 
   val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
   logger.info("Configuration files loaded")
 
+  private val NUMBER_OF_VMS = defaultConfig.getInt("vm.number")
+  private val VM_PES = defaultConfig.getInt("vm.pes")
+  private val VM_RAM = defaultConfig.getInt("vm.ram")
+  private val VM_BW = defaultConfig.getInt("vm.bw")
+  private val VM_STORAGE = defaultConfig.getInt("vm.storage")
+  private val VM_MIPS = defaultConfig.getInt("vm.mips")
+
   private val NUMBER_OF_HOSTS = defaultConfig.getInt("hosts.number")
-  private val HOST_MIPS = 1000
-  private val HOST_PES = 4
-  private val HOST_RAM = 2048 // host memory (Megabyte)
+  private val HOST_MIPS = defaultConfig.getInt("hosts.mips")
+  private val HOST_PES = defaultConfig.getInt("hosts.pes")
+  private val HOST_RAM = defaultConfig.getInt("hosts.ram") // host memory (Megabyte)
+  private val HOST_STORAGE = defaultConfig.getInt("hosts.storage") // host storage
+  private val HOST_BW = defaultConfig.getInt("hosts.bw")
 
-  private val HOST_STORAGE = 1000000 // host storage
-
-  private val HOST_BW = 10000
-  private val CLOUDLET_EXECUTION_TASK_LENGTH = 4000
   private val CLOUDLET_FILE_SIZE = defaultConfig.getLong("cloudlet.file_size")
   private val CLOUDLET_OUTPUT_SIZE = defaultConfig.getLong("cloudlet.op_size")
-  private val PACKET_DATA_LENGTH_IN_BYTES = 1000
-  private val NUMBER_OF_PACKETS_TO_SEND = 1
-  private val TASK_RAM = 100
+  private val PACKET_DATA_LENGTH_IN_BYTES = defaultConfig.getInt("cloudlet.packet_data_length_in_bytes")
+  private val NUMBER_OF_PACKETS_TO_SEND = defaultConfig.getInt("cloudlet.number_of_packets")
+  private val TASK_RAM = defaultConfig.getInt("cloudlet.task_ram")
+  private val CLOUDLET_PES = defaultConfig.getInt("cloudlet.pes")
 
+  private val DYNAMIC_CLOUDLETS_AT_A_TIME = defaultConfig.getInt("cloudlet.number_of_dynamic_cloudlets")
+  private val INITIAL_CLOUDLETS = defaultConfig.getInt("cloudlet.initial_cloudlets")
+  private val NUMBER_OF_CLOUDLETS = defaultConfig.getInt("cloudlet.number")
+
+  private val CLOUDLET_LENGTHS = Array(2000, 10000, 30000,16000, 4000, 2000, 20000)
   private val COST_PER_BW = defaultConfig.getDouble("datacenter.cost_per_bw")
   private val COST_PER_SECOND = defaultConfig.getDouble("datacenter.cost_per_sec")
+
+
+  private val SCHEDULING_INTERVAL = defaultConfig.getInt("simulation.scheduling_interval")
+  private val RANDOM_SAMPLE = defaultConfig.getDouble("simulation.random_sample")
+
 
   /**
     * Starts the execution of the example.
@@ -72,7 +89,7 @@ object RoundRobinLoadBalancer {
     * @param cloudlet the { @link NetworkCloudlet} the task will belong to
     */
   private def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
-    val task = new CloudletExecutionTask(cloudlet.getTasks.size, CLOUDLET_EXECUTION_TASK_LENGTH)
+    val task = new CloudletExecutionTask(cloudlet.getTasks.size, (cloudlet.getTotalLength/2))
     task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
   }
@@ -86,14 +103,15 @@ class RoundRobinLoadBalancer private() {
   println("Starting " + getClass.getSimpleName)
   var cloudletlistsize = 0
   val simulation: CloudSim = new CloudSim
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  private val TIME_TO_TERMINATE_SIMULATION: Double = defaultConfig.getInt("simulation.time_to_terminate")
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
   simulation.addOnClockTickListener(createRandomCloudlets)
   private val random = new UniformDistr()
   val datacenter: NetworkDatacenter = createDatacenter
   val broker: DatacenterBroker = new DatacenterBrokerSimple(simulation)
   val vmList = createAndSubmitVMs(broker)
-  val cloudletList = createNetworkCloudlets
+  val cloudletList = new util.ArrayList[NetworkCloudlet]
+  createNetworkCloudlets
   broker.submitCloudletList(cloudletList)
   simulation.addOnClockTickListener(createRandomCloudlets)
   simulation.start
@@ -115,6 +133,8 @@ class RoundRobinLoadBalancer private() {
   private def showSimulationResults(): Unit = {
     val newList = broker.getCloudletFinishedList
     new CloudletsTableBuilderWithCost(newList).build()
+    println("Number of Actual cloudlets = "+RoundRobinLoadBalancer.INITIAL_CLOUDLETS+"; dynamic cloudlets = "+(cloudletList.size()-RoundRobinLoadBalancer.INITIAL_CLOUDLETS))
+
     import scala.collection.JavaConversions._
     for (host <- datacenter.getHostList[NetworkHost]) {
       println("Host " + host.getId + " data transferred: " + host.getTotalDataTransferBytes + " bytes")
@@ -138,7 +158,7 @@ class RoundRobinLoadBalancer private() {
       hostList.add(host)
     }
     val newDatacenter = new NetworkDatacenter(simulation, hostList, new VmAllocationPolicySimple)
-    newDatacenter.setSchedulingInterval(5)
+    newDatacenter.setSchedulingInterval(RoundRobinLoadBalancer.SCHEDULING_INTERVAL)
     newDatacenter.getCharacteristics.setCostPerBw(RoundRobinLoadBalancer.COST_PER_BW)
     newDatacenter.getCharacteristics.setCostPerSecond(RoundRobinLoadBalancer.COST_PER_SECOND)
     createNetwork(newDatacenter)
@@ -193,7 +213,7 @@ class RoundRobinLoadBalancer private() {
     */
   private def createAndSubmitVMs(broker: DatacenterBroker) = {
     val list = new util.ArrayList[NetworkVm]
-    val range = 0 until RoundRobinLoadBalancer.NUMBER_OF_HOSTS
+    val range = 0 until RoundRobinLoadBalancer.NUMBER_OF_VMS
     range.foreach { hostId =>
       val vm = createVm(hostId)
       list.add(vm)
@@ -203,8 +223,8 @@ class RoundRobinLoadBalancer private() {
   }
 
   private def createVm(id: Int) = {
-    val vm = new NetworkVm(id, RoundRobinLoadBalancer.HOST_MIPS, RoundRobinLoadBalancer.HOST_PES)
-    vm.setRam(RoundRobinLoadBalancer.HOST_RAM).setBw(RoundRobinLoadBalancer.HOST_BW).setSize(RoundRobinLoadBalancer.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
+    val vm = new NetworkVm(id, RoundRobinLoadBalancer.VM_MIPS, RoundRobinLoadBalancer.VM_PES)
+    vm.setRam(RoundRobinLoadBalancer.VM_RAM).setBw(RoundRobinLoadBalancer.VM_BW).setSize(RoundRobinLoadBalancer.VM_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
     vm
   }
 
@@ -214,17 +234,28 @@ class RoundRobinLoadBalancer private() {
     *
     * @return the list of create NetworkCloudlets
     */
-  private def createNetworkCloudlets = {
-    val numberOfCloudlets = 20
-    val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets + cloudletlistsize)
-    //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
-    var range = 0 until (cloudletlistsize + numberOfCloudlets)
-    range.foreach { index =>
-      val vmId = index % RoundRobinLoadBalancer.NUMBER_OF_HOSTS
-      networkCloudletList.add(createNetworkCloudlet(vmList.get(vmId)))
-    }
-    cloudletlistsize = cloudletlistsize + numberOfCloudlets
+  private def createNetworkCloudlets: util.ArrayList[NetworkCloudlet] = {
+    var numberOfCloudlets = 0
 
+    if(cloudletList.size()==0) {
+      numberOfCloudlets = RoundRobinLoadBalancer.INITIAL_CLOUDLETS
+    }else{
+      numberOfCloudlets = RoundRobinLoadBalancer.DYNAMIC_CLOUDLETS_AT_A_TIME
+    }
+
+    val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets)
+    //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
+    cloudletlistsize = cloudletList.size()
+    var range = 0 until numberOfCloudlets
+    range.foreach { _ =>
+      if(cloudletlistsize < RoundRobinLoadBalancer.NUMBER_OF_CLOUDLETS) {
+        val vmId = cloudletlistsize % RoundRobinLoadBalancer.NUMBER_OF_VMS
+        val cloudlet = createNetworkCloudlet(vmList.get(vmId))
+        cloudletList.add(cloudlet)
+        networkCloudletList.add(cloudlet)
+        cloudletlistsize = cloudletList.size()
+      }
+    }
     createTasksForNetworkCloudlets(networkCloudletList)
     networkCloudletList
   }
@@ -260,11 +291,11 @@ class RoundRobinLoadBalancer private() {
     * @return
     */
   private def createNetworkCloudlet(vm: NetworkVm) = {
-    val netCloudlet = new NetworkCloudlet(4000, RoundRobinLoadBalancer.HOST_PES)
+    val rand = cloudletList.size() % RoundRobinLoadBalancer.CLOUDLET_LENGTHS.size
+    val length = RoundRobinLoadBalancer.CLOUDLET_LENGTHS(rand)
+    val netCloudlet = new NetworkCloudlet(length, RoundRobinLoadBalancer.CLOUDLET_PES)
     netCloudlet.setMemory(RoundRobinLoadBalancer.TASK_RAM).setFileSize(RoundRobinLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(RoundRobinLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
-    netCloudlet.setFileSize(RoundRobinLoadBalancer.CLOUDLET_FILE_SIZE)
-    netCloudlet.setOutputSize(RoundRobinLoadBalancer.CLOUDLET_OUTPUT_SIZE)
     netCloudlet
   }
 
@@ -306,9 +337,8 @@ class RoundRobinLoadBalancer private() {
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
-    if (random.sample() <= 0.3 && cloudletlistsize < RoundRobinLoadBalancer.NUMBER_OF_HOSTS) {
+    if (random.sample() <= RoundRobinLoadBalancer.RANDOM_SAMPLE && cloudletlistsize != RoundRobinLoadBalancer.NUMBER_OF_CLOUDLETS) {
       printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
-
       broker.submitCloudletList(createNetworkCloudlets)
     }
   }

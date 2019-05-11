@@ -14,7 +14,7 @@ import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple
 import org.cloudbus.cloudsim.provisioners.ResourceProvisionerSimple
 import org.cloudbus.cloudsim.resources.Pe
 import org.cloudbus.cloudsim.resources.PeSimple
-import org.cloudbus.cloudsim.schedulers.cloudlet.CloudletSchedulerTimeShared
+import org.cloudbus.cloudsim.schedulers.cloudlet.{CloudletSchedulerSpaceShared, CloudletSchedulerTimeShared}
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
 import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.network.NetworkVm
@@ -22,6 +22,7 @@ import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBu
 import java.util
 import java.util.ArrayList
 
+import com.cloudsimplus.app.RoundRobinLoadBalancer.defaultConfig
 import org.slf4j.{Logger, LoggerFactory}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
@@ -38,23 +39,38 @@ object RandomLoadBalancer {
   val defaultConfig: Config = ConfigFactory.parseResources("defaults.conf")
   logger.info("Configuration files loaded")
 
+  private val NUMBER_OF_VMS = defaultConfig.getInt("vm.number")
+  private val VM_PES = defaultConfig.getInt("vm.pes")
+  private val VM_RAM = defaultConfig.getInt("vm.ram")
+  private val VM_BW = defaultConfig.getInt("vm.bw")
+  private val VM_STORAGE = defaultConfig.getInt("vm.storage")
+  private val VM_MIPS = defaultConfig.getInt("vm.mips")
+
   private val NUMBER_OF_HOSTS = defaultConfig.getInt("hosts.number")
-  private val HOST_MIPS = 1000
-  private val HOST_PES = 4
-  private val HOST_RAM = 2048 // host memory (Megabyte)
+  private val HOST_MIPS = defaultConfig.getInt("hosts.mips")
+  private val HOST_PES = defaultConfig.getInt("hosts.pes")
+  private val HOST_RAM = defaultConfig.getInt("hosts.ram") // host memory (Megabyte)
+  private val HOST_STORAGE = defaultConfig.getInt("hosts.storage") // host storage
+  private val HOST_BW = defaultConfig.getInt("hosts.bw")
 
-  private val HOST_STORAGE = 1000000 // host storage
-
-  private val HOST_BW = 10000
-  private val CLOUDLET_EXECUTION_TASK_LENGTH = 4000
   private val CLOUDLET_FILE_SIZE = defaultConfig.getLong("cloudlet.file_size")
   private val CLOUDLET_OUTPUT_SIZE = defaultConfig.getLong("cloudlet.op_size")
-  private val PACKET_DATA_LENGTH_IN_BYTES = 1000
-  private val NUMBER_OF_PACKETS_TO_SEND = 1
-  private val TASK_RAM = 100
+  private val PACKET_DATA_LENGTH_IN_BYTES = defaultConfig.getInt("cloudlet.packet_data_length_in_bytes")
+  private val NUMBER_OF_PACKETS_TO_SEND = defaultConfig.getInt("cloudlet.number_of_packets")
+  private val TASK_RAM = defaultConfig.getInt("cloudlet.task_ram")
+  private val CLOUDLET_PES = defaultConfig.getInt("cloudlet.pes")
 
+  private val DYNAMIC_CLOUDLETS_AT_A_TIME = defaultConfig.getInt("cloudlet.number_of_dynamic_cloudlets")
+  private val INITIAL_CLOUDLETS = defaultConfig.getInt("cloudlet.initial_cloudlets")
+  private val NUMBER_OF_CLOUDLETS = defaultConfig.getInt("cloudlet.number")
+
+  private val CLOUDLET_LENGTHS = Array(2000, 10000, 30000,16000, 4000, 2000, 20000)
   private val COST_PER_BW = defaultConfig.getDouble("datacenter.cost_per_bw")
   private val COST_PER_SECOND = defaultConfig.getDouble("datacenter.cost_per_sec")
+
+
+  private val SCHEDULING_INTERVAL = defaultConfig.getInt("simulation.scheduling_interval")
+  private val RANDOM_SAMPLE = defaultConfig.getDouble("simulation.random_sample")
 
   /**
     * Starts the execution of the example.
@@ -72,7 +88,7 @@ object RandomLoadBalancer {
     * @param cloudlet the { @link NetworkCloudlet} the task will belong to
     */
   private def addExecutionTask(cloudlet: NetworkCloudlet): Unit = {
-    val task = new CloudletExecutionTask(cloudlet.getTasks.size, CLOUDLET_EXECUTION_TASK_LENGTH)
+    val task = new CloudletExecutionTask(cloudlet.getTasks.size, cloudlet.getTotalLength/2)
     task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
   }
@@ -86,14 +102,15 @@ class RandomLoadBalancer private() {
   println("Starting " + getClass.getSimpleName)
   var cloudletlistsize = 0
   val simulation: CloudSim = new CloudSim
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  private val TIME_TO_TERMINATE_SIMULATION: Double = defaultConfig.getInt("simulation.time_to_terminate")
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
   simulation.addOnClockTickListener(createRandomCloudlets)
   private val random = new UniformDistr()
   val datacenter: NetworkDatacenter = createDatacenter
   val broker: DatacenterBroker = new DatacenterBrokerSimple(simulation)
   val vmList = createAndSubmitVMs(broker)
-  val cloudletList = createNetworkCloudlets
+  val cloudletList = new util.ArrayList[NetworkCloudlet]()
+    createNetworkCloudlets
   broker.submitCloudletList(cloudletList)
   simulation.addOnClockTickListener(createRandomCloudlets)
   simulation.start
@@ -193,7 +210,7 @@ class RandomLoadBalancer private() {
     */
   private def createAndSubmitVMs(broker: DatacenterBroker) = {
     val list = new util.ArrayList[NetworkVm]
-    val range = 0 until RandomLoadBalancer.NUMBER_OF_HOSTS
+    val range = 0 until RandomLoadBalancer.NUMBER_OF_VMS
     range.foreach { hostId =>
       val vm = createVm(hostId)
       list.add(vm)
@@ -203,8 +220,8 @@ class RandomLoadBalancer private() {
   }
 
   private def createVm(id: Int) = {
-    val vm = new NetworkVm(id, RandomLoadBalancer.HOST_MIPS, RandomLoadBalancer.HOST_PES)
-    vm.setRam(RandomLoadBalancer.HOST_RAM).setBw(RandomLoadBalancer.HOST_BW).setSize(RandomLoadBalancer.HOST_STORAGE).setCloudletScheduler(new CloudletSchedulerTimeShared)
+    val vm = new NetworkVm(id, RandomLoadBalancer.VM_MIPS, RandomLoadBalancer.VM_PES)
+    vm.setRam(RandomLoadBalancer.VM_RAM).setBw(RandomLoadBalancer.VM_BW).setSize(RandomLoadBalancer.VM_STORAGE).setCloudletScheduler(new CloudletSchedulerSpaceShared)
     vm
   }
 
@@ -215,15 +232,27 @@ class RandomLoadBalancer private() {
     * @return the list of create NetworkCloudlets
     */
   private def createNetworkCloudlets = {
-    val numberOfCloudlets = 20
-    val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets + cloudletlistsize)
-    //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
-    var range = 0 until (cloudletlistsize + numberOfCloudlets)
-    val r = new scala.util.Random
-    range.foreach { vmId =>
-      networkCloudletList.add(createNetworkCloudlet(vmList.get(r.nextInt(numberOfCloudlets))))
+    var numberOfCloudlets = 0
+
+    if(cloudletList.size()==0) {
+      numberOfCloudlets = RandomLoadBalancer.INITIAL_CLOUDLETS
+    }else{
+      numberOfCloudlets = RandomLoadBalancer.DYNAMIC_CLOUDLETS_AT_A_TIME
     }
-    cloudletlistsize = cloudletlistsize + numberOfCloudlets
+
+    val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets)
+    //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
+    cloudletlistsize = cloudletList.size()
+    var range = 0 until numberOfCloudlets
+    val r = new scala.util.Random
+    range.foreach { _ =>
+      if (cloudletlistsize < RandomLoadBalancer.NUMBER_OF_CLOUDLETS) {
+        val cloudlet = createNetworkCloudlet(vmList.get(r.nextInt(numberOfCloudlets)))
+        cloudletList.add(cloudlet)
+        networkCloudletList.add(cloudlet)
+        cloudletlistsize = cloudletList.size()
+      }
+    }
 
     createTasksForNetworkCloudlets(networkCloudletList)
     networkCloudletList
@@ -260,7 +289,9 @@ class RandomLoadBalancer private() {
     * @return
     */
   private def createNetworkCloudlet(vm: NetworkVm) = {
-    val netCloudlet = new NetworkCloudlet(4000, RandomLoadBalancer.HOST_PES)
+    val rand = cloudletList.size() % RandomLoadBalancer.CLOUDLET_LENGTHS.size
+    val length = RandomLoadBalancer.CLOUDLET_LENGTHS(rand)
+    val netCloudlet = new NetworkCloudlet(length, RandomLoadBalancer.CLOUDLET_PES)
     netCloudlet.setMemory(RandomLoadBalancer.TASK_RAM).setFileSize(RandomLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(RandomLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
     netCloudlet.setVm(vm)
     netCloudlet.setFileSize(RandomLoadBalancer.CLOUDLET_FILE_SIZE)
@@ -306,7 +337,7 @@ class RandomLoadBalancer private() {
     * @param evt
     */
   private def createRandomCloudlets(evt: EventInfo): Unit = {
-    if (random.sample() <= 0.3 && cloudletlistsize < RandomLoadBalancer.NUMBER_OF_HOSTS) {
+    if (random.sample() <= 0.3 && cloudletlistsize < 100) {
       printf("\n# Randomly creating 1 Cloudlet at time %.2f\n", evt.getTime)
 
       broker.submitCloudletList(createNetworkCloudlets)
