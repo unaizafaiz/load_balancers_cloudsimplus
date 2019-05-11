@@ -15,7 +15,7 @@ import org.cloudbus.cloudsim.resources.Pe
 import org.cloudbus.cloudsim.resources.PeSimple
 import org.cloudbus.cloudsim.schedulers.cloudlet.{CloudletSchedulerSpaceShared, CloudletSchedulerTimeShared}
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
-import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
+import org.cloudbus.cloudsim.utilizationmodels.{UtilizationModelDynamic, UtilizationModelFull}
 import org.cloudbus.cloudsim.vms.network.NetworkVm
 import org.cloudsimplus.builders.tables.CloudletsTableBuilderWithCost
 import java.util
@@ -25,6 +25,7 @@ import com.cloudsimplus.app.NetworkAbstract.{TASK_RAM, defaultConfig}
 import org.slf4j.{Logger, LoggerFactory}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
+import org.cloudbus.cloudsim.utilzationmodels.UtilizationModelHalf
 import org.cloudsimplus.listeners.EventInfo
 
 
@@ -321,6 +322,21 @@ abstract class NetworkAbstract {
     val length = NetworkAbstract.CLOUDLET_LENGTHS(rand)
     val netCloudlet = new NetworkCloudlet(id, length, NetworkAbstract.CLOUDLET_PES)
     netCloudlet.setMemory(NetworkAbstract.TASK_RAM).setFileSize(NetworkAbstract.CLOUDLET_FILE_SIZE).setOutputSize(NetworkAbstract.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+
+
+    //Using planetLab tracefile to build a CPU Utilization model
+    /*val TRACE_FILE = "75-130-96-12_static_oxfr_ma_charter_com_irisaple_wup"
+
+    import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelPlanetLab
+    val utilizationCpu = UtilizationModelPlanetLab.getInstance(TRACE_FILE, NetworkAbstract.SCHEDULING_INTERVAL)
+
+    //netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+
+
+    netCloudlet.setMemory(NetworkAbstract.TASK_RAM).setFileSize(NetworkAbstract.CLOUDLET_FILE_SIZE).setOutputSize(NetworkAbstract.CLOUDLET_OUTPUT_SIZE).setUtilizationModelCpu(utilizationCpu)
+      .setUtilizationModelBw(new UtilizationModelDynamic(0.2))
+      .setUtilizationModelRam(new UtilizationModelDynamic(0.4))
+*/
     netCloudlet.setVm(vm)
     netCloudlet
   }

@@ -14,7 +14,7 @@ import org.cloudbus.cloudsim.resources.Pe
 import org.cloudbus.cloudsim.resources.PeSimple
 import org.cloudbus.cloudsim.schedulers.cloudlet.{CloudletSchedulerSpaceShared, CloudletSchedulerTimeShared}
 import org.cloudbus.cloudsim.schedulers.vm.VmSchedulerTimeShared
-import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
+import org.cloudbus.cloudsim.utilizationmodels.{UtilizationModelDynamic, UtilizationModelFull}
 import org.cloudbus.cloudsim.vms.network.NetworkVm
 import org.cloudsimplus.builders.tables.CloudletsTableBuilderWithCost
 import java.util
@@ -22,6 +22,7 @@ import java.util.ArrayList
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.cloudbus.cloudsim.distributions.UniformDistr
+import org.cloudbus.cloudsim.utilzationmodels.UtilizationModelHalf
 import org.cloudbus.cloudsim.vms.Vm
 import org.cloudsimplus.autoscaling.HorizontalVmScalingSimple
 import org.cloudsimplus.listeners.EventInfo
@@ -380,6 +381,19 @@ object HorizontalVmScalingLoadBalancer {
     val length = CLOUDLET_LENGTHS(rand)
     val netCloudlet = new NetworkCloudlet(id, length, HorizontalVmScalingLoadBalancer.CLOUDLET_PES)
     netCloudlet.setMemory(HorizontalVmScalingLoadBalancer.TASK_RAM).setFileSize(HorizontalVmScalingLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(HorizontalVmScalingLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+
+    //Using planetLab tracefile to build a CPU Utilization model
+    /* val TRACE_FILE = "75-130-96-12_static_oxfr_ma_charter_com_irisaple_wup"
+
+    import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelPlanetLab
+    val utilizationCpu = UtilizationModelPlanetLab.getInstance(TRACE_FILE, HorizontalVmScalingLoadBalancer.SCHEDULING_INTERVAL)
+
+    //netCloudlet.setMemory(NetworkTopologyTraceFile.TASK_RAM).setFileSize(NetworkTopologyTraceFile.CLOUDLET_FILE_SIZE).setOutputSize(NetworkTopologyTraceFile.CLOUDLET_OUTPUT_SIZE).setUtilizationModel(new UtilizationModelFull)
+
+
+    netCloudlet.setMemory(HorizontalVmScalingLoadBalancer.TASK_RAM).setFileSize(HorizontalVmScalingLoadBalancer.CLOUDLET_FILE_SIZE).setOutputSize(HorizontalVmScalingLoadBalancer.CLOUDLET_OUTPUT_SIZE).setUtilizationModelCpu(utilizationCpu)
+      .setUtilizationModelBw(new UtilizationModelDynamic(0.2))
+      .setUtilizationModelRam(new UtilizationModelDynamic(0.4))*/
     netCloudlet
   }
 
