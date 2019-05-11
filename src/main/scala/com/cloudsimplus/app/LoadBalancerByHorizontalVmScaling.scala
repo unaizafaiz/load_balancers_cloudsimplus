@@ -1,4 +1,3 @@
-
 package com.cloudsimplus.app
 
 import org.cloudbus.cloudsim.allocationpolicies.VmAllocationPolicySimple
@@ -20,7 +19,7 @@ import org.cloudbus.cloudsim.utilizationmodels.UtilizationModelFull
 import org.cloudbus.cloudsim.vms.Vm
 import org.cloudbus.cloudsim.vms.VmSimple
 import org.cloudsimplus.autoscaling.HorizontalVmScalingSimple
-import org.cloudsimplus.builders.tables.CloudletsTableBuilder
+import org.cloudsimplus.builders.tables.{CloudletsTableBuilder, CloudletsTableBuilderWithCost}
 import org.cloudsimplus.listeners.EventInfo
 import java.util
 import java.util.Comparator.comparingDouble
@@ -33,6 +32,9 @@ import java.util.Comparator.comparingDouble
 object LoadBalancerByHorizontalVmScaling {
 
   private val SCHEDULING_INTERVAL = 5
+
+  private val COST_PER_BW = 0.001667
+  private val COST_PER_SECOND = 0.75
   /**
     * The interval to request the creation of new Cloudlets.
     */
@@ -88,7 +90,7 @@ object LoadBalancerByHorizontalVmScaling {
     val sortByStartTime = comparingDouble((c: Cloudlet) => c.getExecStartTime)
     finishedCloudlets.sort(sortByVmId.thenComparing(sortByStartTime))
     print("Size ="+finishedCloudlets.size())
-    new CloudletsTableBuilder(finishedCloudlets).build()
+    new CloudletsTableBuilderWithCost(finishedCloudlets).build()
   }
 
   private def createCloudletList(): Unit = {
@@ -132,6 +134,8 @@ object LoadBalancerByHorizontalVmScaling {
     }
     val dc0 = new DatacenterSimple(simulation, hostList, new VmAllocationPolicySimple)
     dc0.setSchedulingInterval(LoadBalancerByHorizontalVmScaling.SCHEDULING_INTERVAL)
+    dc0.getCharacteristics.setCostPerBw(LoadBalancerByHorizontalVmScaling.COST_PER_BW)
+    dc0.getCharacteristics.setCostPerSecond(LoadBalancerByHorizontalVmScaling.COST_PER_SECOND)
   }
 
   private def createHost = {
@@ -210,6 +214,6 @@ object LoadBalancerByHorizontalVmScaling {
     //randomly selects a length for the cloudlet
     val length = LoadBalancerByHorizontalVmScaling.CLOUDLET_LENGTHS(rand.sample.toInt)
     val utilization = new UtilizationModelFull
-    new CloudletSimple(id, length, 2).setFileSize(1024).setOutputSize(1024).setUtilizationModel(utilization)
+    new CloudletSimple(id, length, 2).setFileSize(250).setOutputSize(300).setUtilizationModel(utilization)
   }
 }

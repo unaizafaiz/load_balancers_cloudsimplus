@@ -46,7 +46,7 @@ object RoundRobinLoadBalancer {
   private val HOST_STORAGE = 1000000 // host storage
 
   private val HOST_BW = 10000
-  private val CLOUDLET_EXECUTION_TASK_LENGTH = 4000
+  private val CLOUDLET_EXECUTION_TASK_LENGTH = 30000
   private val CLOUDLET_FILE_SIZE = defaultConfig.getLong("cloudlet.file_size")
   private val CLOUDLET_OUTPUT_SIZE = defaultConfig.getLong("cloudlet.op_size")
   private val PACKET_DATA_LENGTH_IN_BYTES = 1000
@@ -86,7 +86,7 @@ class RoundRobinLoadBalancer private() {
   println("Starting " + getClass.getSimpleName)
   var cloudletlistsize = 0
   val simulation: CloudSim = new CloudSim
-  private val TIME_TO_TERMINATE_SIMULATION: Double = 30
+  private val TIME_TO_TERMINATE_SIMULATION: Double = 1000
   simulation.terminateAt(TIME_TO_TERMINATE_SIMULATION)
   simulation.addOnClockTickListener(createRandomCloudlets)
   private val random = new UniformDistr()
@@ -215,7 +215,7 @@ class RoundRobinLoadBalancer private() {
     * @return the list of create NetworkCloudlets
     */
   private def createNetworkCloudlets = {
-    val numberOfCloudlets = 20
+    val numberOfCloudlets = 22
     val networkCloudletList = new util.ArrayList[NetworkCloudlet](numberOfCloudlets + cloudletlistsize)
     //val selectedVms = randomlySelectVmsForApp(broker, numberOfCloudlets)
     var range = 0 until (cloudletlistsize + numberOfCloudlets)
@@ -234,7 +234,7 @@ class RoundRobinLoadBalancer private() {
     for (cloudlet <- networkCloudletList) {
       RoundRobinLoadBalancer.addExecutionTask(cloudlet)
       //NetworkCloudlet 0 waits data from other Cloudlets
-      if (cloudlet.getId == 0) {
+      /*if (cloudlet.getId == 0) {
         /*
                        If there are a total of N Cloudlets, since the first one receives packets
                        from all the other ones, this for creates the tasks for the first Cloudlet
@@ -246,7 +246,7 @@ class RoundRobinLoadBalancer private() {
       }
       else { //The other NetworkCloudlets send data to the first one
         addSendTask(cloudlet, networkCloudletList.get(0))
-      }
+      }*/
     }
 
     // broker.submitCloudletList(networkCloudletList)
