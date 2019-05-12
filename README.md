@@ -65,6 +65,7 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeding 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
 
 The simulations are carried out on the Cloud Network Architecture with following characteristics:  
+
 - Number of Datacenters:  1
 - Number of VMs:  750
 - Number of Hosts:  1000
