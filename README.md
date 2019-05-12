@@ -38,16 +38,14 @@ Tag name: **cloudsim-plus**
 - /src/main/java
     - org.cloudbus.cloudsim.utilzationmodels/UtilizationModelHalf.java creates a CPU utilization model that uses 50% of the CPU resources at a time
     - org.cloudsimplus.builders.tables/CloudletsTableBuilderWithCost.java extend the cloudsimplus CloudletsTableBuilder to print the results with total cost for each cloudlet
-- 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
-
 
 #### Approach towards designing the simulation:
 The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a network cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
 
-We use three different load balancers in our simulation:
-- Random: Random is a static algorithm that uses a random number generator to assign cloudlets to VMs. We use the Random algorithm as the baseline for evaluating the simulation.
-- Round Robin: Round robin is another static load balancing algorithm where each cloudlet will be assigned to VM in a round - robin sequence. Each cloudlet thus will be given an equal interval of time and an equal share of all resources in sequence.
-- Horizontal VM Scaling: Horizontal VM Scaling is a dynamic load balancing algorithm that allows defining the condition to identify an overloaded VM, which in our case is based on current CPU utilization exceeding 70%, which will result in the creation of additional VMs.
+We use three different load balancers in our simulation:  
+- Random: Random is a static algorithm that uses a random number generator to assign cloudlets to VMs. We use the Random algorithm as the baseline for evaluating the simulation.  
+- Round Robin: Round robin is another static load balancing algorithm where each cloudlet will be assigned to VM in a round - robin sequence. Each cloudlet thus will be given an equal interval of time and an equal share of all resources in sequence.  
+- Horizontal VM Scaling: Horizontal VM Scaling is a dynamic load balancing algorithm that allows defining the condition to identify an overloaded VM, which in our case is based on current CPU utilization exceeding 70%, which will result in the creation of additional VMs.  
 
 As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 
@@ -55,7 +53,7 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Alternate Hypothesis:** No improvement in performance can be seen with Horizontal VM Scaling algorithm as compared with the Random and Round Robin algorithms  
 
 **Architecture of the Cloud Network**
-![CloudArchitecture](./CloudSimPlusArchitecture(cloudcraft).png)
+The file 'CloudSimPlusArchitecture' contains the diagram of the cloud network architecture.
 
 The simulations are carried out Cloud Network Architecture with following characteristics:  
 - Number of Datacenters:  1
