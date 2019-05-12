@@ -86,18 +86,21 @@ The simulations are carried out on the Cloud Network Architecture with following
 
 **Evalution of the simulation:**
 
-We did not apply regression analysis as the prediction of cost as well as execution time based on some cloudlet's unseen cloudlet length and/or VM/Host characteristics would be redundant as that is what Cloudsim Plus is built for.
+We did not apply regression analysis as the prediction of cost as well as execution time based on an unseen cloudlet's length and/or VM/Host characteristics would be redundant as Cloudsim Plus serves this purpose.
 
 Consecutively, we evaluated our load balancers by keeping cloudlet execution time and cost of running of our total workload as our primary criterion
 
 The results of the simulation are in the file [results.xlsx](./results.xlsx). We found a larger difference in the T-test value between Random vs Horizontal VM scaling and Round Robin vs Horizontal VM Scaling by running T-tests on the corresponding costs of the load balancers. This result is statistically significant as it proves the fact that Round Robin LB algorithm and Horizontal VM Scaling algorithm performs better than just randomly assigning these cloudlets to VMs in different datacenters.
-  
-We found that the p-value for Horizontal VM Scaling to be 0, when compared to RoundRobin and random load balancers. 
-This shows statistical significance.
+
+Moreover, T-test score of 0.21 and 0.27 for running costs between Random vs Horizontal VM Scaling and Round Robin vs Horizontal VM Scaling signify that Horizontal VM scaling outperforms the latter two algorithms by a sufficient margin. However, the difference of 0.016 between T-test scores of Random and Round Robin give a notion that Random LB is as good as Round Robin LB. But, this is not the case as Randon LB runs for almost 3000 seconds for executing 500 cloudlets in the worst case when multiple cloudlets get assigned to the same VM whereas Round Robin finishes the simulation in less than 60 seconds. The trade-off between running cost and execution time should be considered and not just each parameter alone.
+
+Furthermore, T-test score of 0 for execution time between Random vs Round Robin LB prove that the means of these two Load Balancers are same. The T-test score of 0.11 for execution times of Round Robin vs Horizontal VM Scaling LB is valid as Round Robin takes less time to execute for 500 cloudlets than Horizontal VM Scaling. Random vs Horizontal VM Scaling shows a T-test score 0f 0.09 for execution time. This result concludes that Horizontal VM Scaling takes less time to execute 500 cloudlets than Random Load Balancing.
+
+We found that the p-values for Horizontal VM Scaling LB to be around ~ 0.40, when compared to RoundRobin and Random load balancers. This shows statistical significance as a significantly higher p-value (typically >= 0.05) indicates strong evidence for supporting the null hypothesis.
 
 **Results using the three alogrithms:**
 
-Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin took less than 60 seconds and Hirizontal VM scaling took around 160 seconds.
+Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin LB took less than 60 seconds and Horizontal VM scaling took around 160 seconds.
 
 **Pros and Cons of our approach:**
 
@@ -110,8 +113,7 @@ Random LB algorithm took higher time to execute when compared to Round Robin and
 
 **Challenges faced**
 - We attempted scaling our basic architecture to assume higher number of Datacenters, VMs, Hosts along with higher number of dynamic cloudlets. While we were able to achieve scaling with the simple Cloudlet tasks designed 
-on Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of packets between the tasks designed for Network Cloudlets. As using Network Cloudlets was a pre-requisite for the project, we performed our simulation on a
-limited scale network cloud environment.
+on Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of packets between the tasks designed for Network Cloudlets. As using Network Cloudlets was a pre-requisite for the project, we performed our simulation on a limited scale networked cloud environment.
 
 **Conclusion:**  
-Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple static algorithms like Random and Round Robin.
+Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple static algorithms for load balancing like Random LB and Round Robin LB.
