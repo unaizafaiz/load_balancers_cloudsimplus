@@ -94,7 +94,7 @@ This shows statistical significance.
 
 **Results using the three alogrithms:**
 
-Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin took less than 60 seconds and Hirizontal VM scaling took around 160 seconds.
+Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin took less than 60 seconds and Horizontal VM scaling took around 160 seconds.
 
 **Pros and Cons of our approach:**
 
