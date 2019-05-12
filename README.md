@@ -66,8 +66,11 @@ The above figure shows the high-level system architecture of our cloud network. 
 
 The simulations are carried out on the Cloud Network Architecture with following characteristics:  
 - Number of Datacenters:  1
+
 - Number of VMs:  750
+
 - Number of Hosts:  1000
+
 - Number of Cloudlets:  500
 
 **Allocation Policies**
