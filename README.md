@@ -90,8 +90,7 @@ We found that the p-value for Horizontal VM Scaling to be 0, when compared to Ro
 This shows statistical significance.
 
 **Results using the three alogrithms:**  
-Random algorithm took higher time to execute when compared to other two algorithm. It took >3000 seconds to complete executing 500 cloudlets
-Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets. Random LB and random cloudlet assignment is inefficient and takes a long time.
+Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin took less than 60 seconds and Hirizontal VM scaling took around 160 seconds.
 
 **Pros and Cons of our approach:**
 **Pros:**  
@@ -103,7 +102,7 @@ Random LB algorithm took higher time to execute when compared to Round Robin and
 
 **Challenges faced**
 - We attempted scaling our basic architecture to assume higher number of Datacenters, VMs, Hosts along with higher number of dynamic cloudlets. While we were able to achieve scaling with the simple Cloudlet tasks designed 
-for Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of packets between the tasks designed for Network Cloudlets. As using Network Cloudlets was a pre-requisite for the project, we performed our simulation on a
+on Clousim Plus, we faced dynamic VM allocation exceptions due to transfer of packets between the tasks designed for Network Cloudlets. As using Network Cloudlets was a pre-requisite for the project, we performed our simulation on a
 limited scale network cloud environment.
 
 **Conclusion:**  
