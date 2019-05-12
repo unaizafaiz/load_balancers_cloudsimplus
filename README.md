@@ -71,7 +71,8 @@ The simulations are carried out on the Cloud Network Architecture with following
 - Number of Hosts:  1000
 - Number of Cloudlets:  500
 
-####Allocation Policies:
+#### Allocation Policies:
+
 - VM Allocation Policy: VMs are allocated to Hosts using VMAllocationPolicySimple provided by Cloudsim Plus
 - VM Scheduling Policy: VMs are scheduled to run using VmSchedulerTimeShared provided by Cloudsim Plus
 - Cloudlet Scheduling Policy: Cloudlets are scheduled to run on VMs using CloudletSchedulerSpaceShared provided by Cloudsim Plus
@@ -81,6 +82,7 @@ The simulations are carried out on the Cloud Network Architecture with following
 	  - We also built our own CPU Utilization model that utilizes 50% of the allocated resources all the time. We found that this incurred a higher cost when compared to other utilization models across all the load balancers
 
 **Evalution of the simulation:**
+
 We did not apply regression analysis as the prediction of cost as well as execution time based on some cloudlet's unseen cloudlet length and/or VM/Host characteristics would be redundant as that is what Cloudsim Plus is built for.
 
 Consecutively, we evaluated our load balancers by keeping cloudlet execution time and cost of running of our total workload as our primary criterion
@@ -90,10 +92,12 @@ The results of the simulation are in the file [results.xlsx](./results.xlsx). We
 We found that the p-value for Horizontal VM Scaling to be 0, when compared to RoundRobin and random load balancers. 
 This shows statistical significance.
 
-**Results using the three alogrithms:**  
+**Results using the three alogrithms:**
+
 Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets, while Round Robin took less than 60 seconds and Hirizontal VM scaling took around 160 seconds.
 
 **Pros and Cons of our approach:**
+
 **Pros:**  
 - We apply the theoretical concepts learnt as part of CS 441 course in designing the network architecture and in developing our Null Hypothesis  
 - Our statistical results help in proving the hypothesis
