@@ -12,13 +12,18 @@
 
 **For Building the Docker image:**
 
+**Locally:**
 Command to build image: **docker build -f Dockerfile -t docker-cloudsim-plus .**  
 Command to run the image: **docker run -it docker-cloudsim-plus**  
 
-The generated Docker image hs been pushed to the Docker Hub public repository: **https://cloud.docker.com/repository/docker/unaizafaiz/unaiza_faiz_project_dockerimage**  
+The generated Docker image has been pushed to the Docker Hub public repository: **https://cloud.docker.com/repository/docker/unaizafaiz/unaiza_faiz_project**  
 Account name: **unaizafaiz**  
-Repository name: **unaiza_faiz_project_dockerimage**  
-Tag name: **project**  
+Repository name: **unaiza_faiz_project**  
+Tag name: **cloudsim-plus**  
+
+#### Steps to run docker image from hub
+1. Pull the image using: `docker pull unaizafaiz/unaiza_faiz_project:cloudsim-plus`
+2. Run the image using: `docker run -it unaizafaiz/unaiza_faiz_project:cloudsim-plus`
 
 
 #### Structure of the project folder:
@@ -34,10 +39,6 @@ Tag name: **project**
     - org.cloudbus.cloudsim.utilzationmodels/UtilizationModelHalf.java creates a CPU utilization model that uses 50% of the CPU resources at a time
     - org.cloudsimplus.builders.tables/CloudletsTableBuilderWithCost.java extend the cloudsimplus CloudletsTableBuilder to print the results with total cost for each cloudlet
 - 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
-
-
-#### Unit Tests included in the code:
-
 
 
 #### Approach towards designing the simulation:
