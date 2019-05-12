@@ -43,7 +43,6 @@ Tag name: **cloudsim-plus**
     - org.cloudbus.cloudsim.utilzationmodels/UtilizationModelHalf.java creates a CPU utilization model that uses 50% of the CPU resources at a time
     - org.cloudsimplus.builders.tables/CloudletsTableBuilderWithCost.java extend the cloudsimplus CloudletsTableBuilder to print the results with total cost for each cloudlet
 
-
 #### Approach towards designing the simulation:
 The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a networked cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
 
@@ -58,7 +57,10 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Alternate Hypothesis:** No improvement in performance can be seen with Horizontal VM Scaling algorithm as compared with the Random and Round Robin algorithms  
 
 **Architecture of the Cloud Network**
-![CloudArchitecture](./CloudSimPlusArchitecture(cloudcraft).png)
+
+
+![CloudSimPlusArchitecture](./CloudSimPlusArchitecture.png)
+(The file 'CloudSimPlusArchitecture' contains the diagram of the cloud network architecture.)
 
 The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeding 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
 
@@ -87,6 +89,8 @@ The results of the simulation are in the file [results.xlsx](./results.xlsx). We
 We found that the p-value for Horizontal VM Scaling to be 0, when compared to RoundRobin and random load balancers. 
 This shows statistical significance.
 
+**Results using the three alogrithms:**  
+Random algorithm took higher time to execute when compared to other two algorithm. It took >3000 seconds to complete executing 500 cloudlets
 Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets. Random LB and random cloudlet assignment is inefficient and takes a long time.
 
 **Pros and Cons of our approach:**
