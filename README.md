@@ -62,7 +62,7 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 ![CloudSimPlusArchitecture](./CloudSimPlusArchitecture.png)
 (The file 'CloudSimPlusArchitecture' contains the diagram of the cloud network architecture.)
 
-The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeind 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
+The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeding 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
 
 The simulations are carried out on the Cloud Network Architecture with following characteristics:  
 - Number of Datacenters:  1
@@ -76,22 +76,22 @@ The simulations are carried out on the Cloud Network Architecture with following
 - Cloudlet Scheduling Policy - Cloudlets are scheduled to run on VMs using CloudletSchedulerSpaceShared provided by Cloudsim Plus
 	- We also tested our simulation with CloudletSchedulerTimeShared but random algorithm was taking a longer time to terminate. Hence, we concluded that Space Shared was a better choice
 - CPU Utilization Model - Cloudlets use UtilizationModelFull where they always utilize an allocated resources from its Vm at 100% all the time
-	- We experimented with our other CPU utilization models using planetlab trace files. Interestingly, using this model, Random performed better than the other 2 Load Balancers
+	- We experimented with our other CPU utilization models using planetlab trace files. Interestingly, using this model, Random Load Balancer performed better than the other 2 Load Balancers. The results were not very impressive after using planetlab tracefiles. One reason for this we thought would be that our tracefiles always had >= 100% utilization of CPU and hence, couldn't perform well. However, it could simulate real-world scenario where there are native processes and programs running on VMs too.
 	- We also built our own CPU Utilization model that utilizes 50% of the allocated resources all the time. We found that this incurred a higher cost when compared to other utilization models across all the load balancers
 
-**Evalution of the simulation:**  
-We evaluated our load balancers by keeping execution time and cost of running as our main criteria
+**Evalution of the simulation:**
+We did not apply regression analysis as the prediction of cost as well as execution time based on some cloudlet's unseen cloudlet length and/or VM/Host characteristics would be redundant as that is what Cloudsim Plus is built for.
 
-The results of the simulation are in the file [results.xlsx](./results.xlsx). We found a larger difference in the t-test value between Random vs Horizontal VM scaling and Round Robin vs Horizontal VM Scaling by running T-tests on the corresponding costs of the load balancers.
+Consecutively, we evaluated our load balancers by keeping cloudlet execution time and cost of running of our total workload as our primary criterion
 
-We consider Cost vs Length while performing statistical regression.
+The results of the simulation are in the file [results.xlsx](./results.xlsx). We found a larger difference in the T-test value between Random vs Horizontal VM scaling and Round Robin vs Horizontal VM Scaling by running T-tests on the corresponding costs of the load balancers. This result is statistically significant as it proves the fact that Round Robin LB algorithm and Horizontal VM Scaling algorithm performs better than just randomly assigning these cloudlets to VMs in different datacenters.
   
 We found that the p-value for Horizontal VM Scaling to be 0, when compared to RoundRobin and random load balancers. 
 This shows statistical significance.
-  
 
 **Results using the three alogrithms:**  
 Random algorithm took higher time to execute when compared to other two algorithm. It took >3000 seconds to complete executing 500 cloudlets
+Random LB algorithm took higher time to execute when compared to Round Robin and Horizontal VM Scaling LB algorithms. It took > 3000 seconds to complete executing 500 cloudlets. Random LB and random cloudlet assignment is inefficient and takes a long time.
 
 **Pros and Cons of our approach:**
 **Pros:**  
@@ -99,7 +99,7 @@ Random algorithm took higher time to execute when compared to other two algorith
 - Our statistical results help in proving the hypothesis
 
 **Cons:**  
-- The network architecture assumed here is on a comparatively lower scale when considered from a real world cloud computing environment. However, we limited our scaling to a basic level due to the challenges enlisted below.
+- The network architecture assumed here is comparatively nascent when considered from the point of view of a real world cloud computing environment. However, we limited our scaling to a basic level due to the challenges enlisted below.
 
 **Challenges faced**
 - We attempted scaling our basic architecture to assume higher number of Datacenters, VMs, Hosts along with higher number of dynamic cloudlets. While we were able to achieve scaling with the simple Cloudlet tasks designed 
@@ -108,10 +108,3 @@ limited scale network cloud environment.
 
 **Conclusion:**  
 Based on our performance evaluation, we see an improvement in performance in terms of cost and processing time when a dynamic algorithm like Horizontal VM Scaling is used vs other simple static algorithms like Random and Round Robin.
-
-
-
-
-
-
-
