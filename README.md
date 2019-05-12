@@ -59,7 +59,7 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Architecture of the Cloud Network**
 
 
-![CloudSimPlusArchitecture](./CloudSimPlusArchitecture.png)
+![CloudSimPlusArchitecture](CloudSimPlusArchitecture.png)
 (The file 'CloudSimPlusArchitecture' contains the diagram of the cloud network architecture.)
 
 The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeding 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
@@ -70,14 +70,14 @@ The simulations are carried out on the Cloud Network Architecture with following
 - Number of Hosts:  1000
 - Number of Cloudlets:  500
 
-**Allocation Policies**
-- VM Allocation Policy - VMs are allocated to Hosts using VMAllocationPolicySimple provided by Cloudsim Plus
-- VM Scheduling Policy - VMs are scheduled to run using VmSchedulerTimeShared provided by Cloudsim Plus
-- Cloudlet Scheduling Policy - Cloudlets are scheduled to run on VMs using CloudletSchedulerSpaceShared provided by Cloudsim Plus
-	- We also tested our simulation with CloudletSchedulerTimeShared but random algorithm was taking a longer time to terminate. Hence, we concluded that Space Shared was a better choice
-- CPU Utilization Model - Cloudlets use UtilizationModelFull where they always utilize an allocated resources from its Vm at 100% all the time
-	- We experimented with our other CPU utilization models using planetlab trace files. Interestingly, using this model, Random Load Balancer performed better than the other 2 Load Balancers. The results were not very impressive after using planetlab tracefiles. One reason for this we thought would be that our tracefiles always had >= 100% utilization of CPU and hence, couldn't perform well. However, it could simulate real-world scenario where there are native processes and programs running on VMs too.
-	- We also built our own CPU Utilization model that utilizes 50% of the allocated resources all the time. We found that this incurred a higher cost when compared to other utilization models across all the load balancers
+####Allocation Policies:
+- VM Allocation Policy: VMs are allocated to Hosts using VMAllocationPolicySimple provided by Cloudsim Plus
+- VM Scheduling Policy: VMs are scheduled to run using VmSchedulerTimeShared provided by Cloudsim Plus
+- Cloudlet Scheduling Policy: Cloudlets are scheduled to run on VMs using CloudletSchedulerSpaceShared provided by Cloudsim Plus
+	  - We also tested our simulation with CloudletSchedulerTimeShared but random algorithm was taking a longer time to terminate. Hence, we concluded that Space Shared was a better choice
+- CPU Utilization Model: Cloudlets use UtilizationModelFull where they always utilize an allocated resources from its Vm at 100% all the time
+	  - We experimented with our other CPU utilization models using planetlab trace files. Interestingly, using this model, Random Load Balancer performed better than the other 2 Load Balancers. The results were not very impressive after using planetlab tracefiles. One reason for this we thought would be that our tracefiles always had >= 100% utilization of CPU and hence, couldn't perform well. However, it could simulate real-world scenario where there are native processes and programs running on VMs too.
+	  - We also built our own CPU Utilization model that utilizes 50% of the allocated resources all the time. We found that this incurred a higher cost when compared to other utilization models across all the load balancers
 
 **Evalution of the simulation:**
 We did not apply regression analysis as the prediction of cost as well as execution time based on some cloudlet's unseen cloudlet length and/or VM/Host characteristics would be redundant as that is what Cloudsim Plus is built for.
