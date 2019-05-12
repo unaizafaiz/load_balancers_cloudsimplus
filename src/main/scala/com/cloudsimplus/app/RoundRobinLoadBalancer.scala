@@ -6,7 +6,7 @@ import org.cloudbus.cloudsim.cloudlets.network.NetworkCloudlet
 
 
 /**
-  * Extends NetworAbstract class to implement a round robin load balancer
+  * Extends NetworkAbstract class to implement a round robin load balancer
   *
   */
 object RoundRobinLoadBalancer {

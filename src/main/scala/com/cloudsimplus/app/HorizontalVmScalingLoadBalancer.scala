@@ -158,11 +158,11 @@ object HorizontalVmScalingLoadBalancer {
   }
 
   /**
-    * Creates the Datacenter.
+    * Creates the Datacenter
     *
     * @return the Datacenter
     */
-  private def createDatacenter = {
+  def createDatacenter = {
     logger.info("Creating a datacenter")
 
     val numberOfHosts = HorizontalVmScalingLoadBalancer.NUMBER_OF_HOSTS * AggregateSwitch.PORTS * RootSwitch.PORTS
@@ -184,7 +184,7 @@ object HorizontalVmScalingLoadBalancer {
     * Create Hosts with configuration parameters
     * @return
     */
-  private def createHost = {
+  def createHost = {
 
     logger.info("Creating a new NetworkHost")
 
@@ -198,7 +198,7 @@ object HorizontalVmScalingLoadBalancer {
     * @param mips
     * @return
     */
-  private def createPEs(numberOfPEs: Int, mips: Long) = {
+  def createPEs(numberOfPEs: Int, mips: Long) = {
     logger.info("Creating "+numberOfPEs+" PEs with mips "+mips)
 
     val peList = new util.ArrayList[Pe]
@@ -212,14 +212,14 @@ object HorizontalVmScalingLoadBalancer {
     *
     * @param datacenter Datacenter where the network will be created
     */
-  private def createNetwork(datacenter: NetworkDatacenter): Unit = {
+  def createNetwork(datacenter: NetworkDatacenter): Unit = {
 
     logger.info("Creating internal network for "+datacenter)
 
     val numberOfEdgeSwitches = HorizontalVmScalingLoadBalancer.NUMBER_OF_HOSTS
     val edgeSwitches: ArrayList[EdgeSwitch] = new util.ArrayList[EdgeSwitch]
 
-    (0 to numberOfEdgeSwitches).toArray.foreach(_ => {
+    (0 until numberOfEdgeSwitches).toArray.foreach(_ => {
       val edgeSwitch = new EdgeSwitch(simulation, datacenter)
       edgeSwitches.add(edgeSwitch)
       datacenter.addSwitch(edgeSwitch)
@@ -256,7 +256,7 @@ object HorizontalVmScalingLoadBalancer {
     * @return the list of scalable VMs
     * @see #createHorizontalVmScaling(Vm)
     */
-  private def createListOfScalableVms(numberOfVms: Int) = {
+  def createListOfScalableVms(numberOfVms: Int) = {
     logger.info("Creating  "+numberOfVms+" scalable VMs")
 
     val newList = new util.ArrayList[NetworkVm](numberOfVms)
@@ -345,7 +345,7 @@ object HorizontalVmScalingLoadBalancer {
     *
     * @return the list of create NetworkCloudlets
     */
-  private def createNetworkCloudlets(eventInfo: EventInfo): Unit = {
+  def createNetworkCloudlets(eventInfo: EventInfo): Unit = {
     logger.info("Creating new cloudlet dynamically at runtime")
 
     //Creating new cloudlets at intervals
@@ -375,7 +375,7 @@ object HorizontalVmScalingLoadBalancer {
     *
     * @return
     */
-  private def createNetworkCloudlet = {
+  def createNetworkCloudlet = {
     logger.info("Creating network cloudlet")
 
     val id = cloudletid
@@ -445,9 +445,4 @@ object HorizontalVmScalingLoadBalancer {
     task.setMemory(TASK_RAM)
     cloudlet.addTask(task)
   }
-
-
-
-
 }
-
