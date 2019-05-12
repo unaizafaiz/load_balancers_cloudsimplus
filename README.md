@@ -72,13 +72,8 @@ We found that the p-value for Horizontal VM Scaling to be 0, when compared to Ro
 This shows statistical significance.
   
 
-**Results using Random alogrithm:**  
+**Results using the three alogrithms:**  
 Random algorithm took higher time to execute when compared to other two algorithm. It took >3000 seconds to complete executing 500 cloudlets
-
-**Results using Round Robin algorithm:**  
-
-
-**Results using Horizontal VM Scaling algorithm:**  
 
 **Pros and Cons of our approach:**
 **Pros:**  
