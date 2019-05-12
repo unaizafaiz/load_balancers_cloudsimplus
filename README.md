@@ -4,11 +4,15 @@
 
 ### How to run the code:
 1. Clone the repository to your local machine using 
-``git clone git@bitbucket.org:unaizafaiz/unaiza_faiz_project.git ``
-2. Go to the cloned repository location on your terminal and compile the program using
+
+	``git clone git@bitbucket.org:unaizafaiz/unaiza_faiz_project.git ``
+
+2. Go to the cloned repository location on your terminal and test the program using
+``sbt clean compile test``
+3. Go to the cloned repository location on your terminal and compile the program using
 ``sbt clean compile run``
-3. When prompted to enter a number to select main class. Enter the number of the desired load balancer class you want to run. 
-4. The output prints a table of results for execution of 500 cloudlets. 
+4. When prompted to enter a number to select main class. Enter the number of the desired load balancer class you want to run. 
+5. The output prints a table of results for execution of 500 cloudlets. 
 
 **For Building the Docker image:**
 
@@ -38,15 +42,14 @@ Tag name: **cloudsim-plus**
 - /src/main/java
     - org.cloudbus.cloudsim.utilzationmodels/UtilizationModelHalf.java creates a CPU utilization model that uses 50% of the CPU resources at a time
     - org.cloudsimplus.builders.tables/CloudletsTableBuilderWithCost.java extend the cloudsimplus CloudletsTableBuilder to print the results with total cost for each cloudlet
-- 'Screenshots_ .........'  provides screenshots of the sbt clean compile run, test and assembly jar file commands along with the simulation results of the three load balancing algorithms
 
 
 #### Approach towards designing the simulation:
-The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a network cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
+The goal of this course project is to simulate cloud environments in CloudSim Plus using different load balancers in a networked cloud architecture. The evaluation of the load balancers is based on the time and cost of processing the cloudlets which are submitted dynamically in the simulation. 
 
 We use three different load balancers in our simulation:
 - Random: Random is a static algorithm that uses a random number generator to assign cloudlets to VMs. We use the Random algorithm as the baseline for evaluating the simulation.
-- Round Robin: Round robin is another static load balancing algorithm where each cloudlet will be assigned to VM in a round - robin sequence. Each cloudlet thus will be given an equal interval of time and an equal share of all resources in sequence.
+- Round Robin: Round robin is another static load balancing algorithm where each cloudlet will be assigned to VM in a round - robin sequence.
 - Horizontal VM Scaling: Horizontal VM Scaling is a dynamic load balancing algorithm that allows defining the condition to identify an overloaded VM, which in our case is based on current CPU utilization exceeding 70%, which will result in the creation of additional VMs.
 
 As part of our evaluation, we assume the below Null and Alternate Hypotheses:
@@ -57,16 +60,27 @@ As part of our evaluation, we assume the below Null and Alternate Hypotheses:
 **Architecture of the Cloud Network**
 ![CloudArchitecture](./CloudSimPlusArchitecture(cloudcraft).png)
 
-The simulations are carried out Cloud Network Architecture with following characteristics:  
+The above figure shows the high-level system architecture of our cloud network. The cloudlets arriving at the endpoint are distributed using load balancers. The load balancers are being simulated using Random, Round-Robin or Horizontal VM Scaling algorithms. Depending on the algorithm, the cloudlets are then assigned to the VMs. In case of horizontal VM scaling, there is auto-scaling of VMs at runtime depending on the current CPU utilization exceeind 70%. Each host is connected to the Edge Switches through a TOR (Top of Row) switch, which is in turn connected to a Router giving our datacenter access to world wide web.
+
+The simulations are carried out on the Cloud Network Architecture with following characteristics:  
 - Number of Datacenters:  1
 - Number of VMs:  750
 - Number of Hosts:  1000
 - Number of Cloudlets:  500
 
+**Allocation Policies**
+- VM Allocation Policy - VMs are allocated to Hosts using VMAllocationPolicySimple provided by Cloudsim Plus
+- VM Scheduling Policy - VMs are scheduled to run using VmSchedulerTimeShared provided by Cloudsim Plus
+- Cloudlet Scheduling Policy - Cloudlets are scheduled to run on VMs using CloudletSchedulerSpaceShared provided by Cloudsim Plus
+	- We also tested our simulation with CloudletSchedulerTimeShared but random algorithm was taking a longer time to terminate. Hence, we concluded that Space Shared was a better choice
+- CPU Utilization Model - Cloudlets use UtilizationModelFull where they always utilize an allocated resources from its Vm at 100% all the time
+	- We experimented with our other CPU utilization models using planetlab trace files. Interestingly, using this model, Random performed better than the other 2 Load Balancers
+	- We also built our own CPU Utilization model that utilizes 50% of the allocated resources all the time. We found that this incurred a higher cost when compared to other utilization models across all the load balancers
 
 **Evalution of the simulation:**  
+We evaluated our load balancers by keeping execution time and cost of running as our main criteria
 
-The results of the simulation are in the file [results.xlsx](./results.xlsx) 
+The results of the simulation are in the file [results.xlsx](./results.xlsx). We found a larger difference in the t-test value between Random vs Horizontal VM scaling and Round Robin vs Horizontal VM Scaling by running T-tests on the corresponding costs of the load balancers.
 
 We consider Cost vs Length while performing statistical regression.
   
